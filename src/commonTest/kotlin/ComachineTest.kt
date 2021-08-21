@@ -42,6 +42,9 @@ class ComachineTest {
 
             whenIn<State.Loading> {
                 onEnter {
+                    yield()
+                    println("### Loading entered")
+
                     val progressUpdate = launch {
                         while (true) {
                             state.update { copy(loadingProgress = loadingProgress + 1) }
@@ -49,14 +52,12 @@ class ComachineTest {
                         }
                     }
 
-                    launch {
-                        val asset = Actions.loadAsset()
-                        println("### asset loaded!")
+                    val asset = Actions.loadAsset()
+                    println("### asset loaded!")
 
-                        progressUpdate.cancel()
-                        state.update { copy(loadingProgress = 100) }
-                        transitionTo { State.Ready(asset) }
-                    }
+                    progressUpdate.cancel()
+                    state.update { copy(loadingProgress = 100) }
+                    transitionTo { State.Ready(asset) }
                 }
 
                 onExit {
