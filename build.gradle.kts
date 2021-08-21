@@ -1,5 +1,7 @@
 plugins {
     kotlin("multiplatform") version "1.5.21"
+    `maven-publish`
+    signing
 }
 
 group = "de.halfbit"
@@ -40,7 +42,6 @@ kotlin {
         else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
     }
 
-    
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -60,3 +61,75 @@ kotlin {
         val nativeTest by getting
     }
 }
+
+val canPublishToMaven = project.hasProperty("signing.keyId")
+if (canPublishToMaven) {
+
+    val javadocJar by tasks.registering(Jar::class) {
+        archiveClassifier.set("javadoc")
+    }
+
+    publishing {
+
+        repositories {
+            maven {
+                name = "local"
+                url = uri("$buildDir/repository")
+            }
+            maven {
+                name = "central"
+                url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2")
+                //url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+                credentials {
+                    username = project.getPropertyOrEmptyString("NEXUS_USERNAME")
+                    password = project.getPropertyOrEmptyString("NEXUS_PASSWORD")
+                }
+            }
+            maven {
+                name = "snapshot"
+                url = uri("https://oss.sonatype.org/content/repositories/snapshots")
+                //url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+                credentials {
+                    username = project.getPropertyOrEmptyString("NEXUS_USERNAME")
+                    password = project.getPropertyOrEmptyString("NEXUS_PASSWORD")
+                }
+            }
+        }
+
+        publications.withType<MavenPublication> {
+
+            artifact(javadocJar.get())
+
+            pom {
+                name.set("Comachine")
+                description.set("Finite-State Machine for Kotlin coroutines")
+                url.set("http://www.halfbit.de")
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("halfbit")
+                        name.set("Sergej Shafarenka")
+                        email.set("info@halfbit.de")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:git@github.com:beworker/comachine.git")
+                    developerConnection.set("scm:git:ssh://github.com:beworker/comachine.git")
+                    url.set("http://www.halfbit.de")
+                }
+            }
+        }
+    }
+
+    signing {
+        sign(publishing.publications)
+    }
+}
+
+fun Project.getPropertyOrEmptyString(name: String): String =
+    if (hasProperty(name)) property(name) as String? ?: "" else ""
