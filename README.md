@@ -12,13 +12,12 @@ sealed interface State {
     data class Gas(val progress: String = "") : State
 }
 
-
 sealed interface Event {
     object OnHeat : Event
     object OnCold : Event
 }
 
-// define state machine
+// define the state machine
 val comachine = comachine<State, Event>(
     startWith = State.Solid()
 ) {
@@ -56,7 +55,7 @@ val comachine = comachine<State, Event>(
     }
 }
 
-// run state machine
+// run the state machine
 runBlockingTest {
     launch {
         comachine.state.collect {
