@@ -16,7 +16,7 @@ class ComachineTest {
         ) : State
 
         data class Ready(
-            val payload: String,
+            val asset: String,
             val playing: Boolean = false
         ) : State
     }
@@ -29,7 +29,7 @@ class ComachineTest {
         suspend fun loadAsset(): String {
             println("### loading asset...")
             delay(4000)
-            return "pachelbel's canon"
+            return "Dave Brubeck - Take Five"
         }
     }
 
@@ -50,12 +50,12 @@ class ComachineTest {
                     }
 
                     launch {
-                        val payload = Actions.loadAsset()
+                        val asset = Actions.loadAsset()
                         println("### asset loaded!")
 
                         progressUpdate.cancel()
                         state.update { copy(loadingProgress = 100) }
-                        transitionTo { State.Ready(payload) }
+                        transitionTo { State.Ready(asset) }
                     }
                 }
 
