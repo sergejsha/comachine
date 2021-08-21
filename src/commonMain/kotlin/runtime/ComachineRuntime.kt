@@ -69,7 +69,10 @@ internal class ComachineRuntime<State : Any, Event : Any>(
 
     private suspend fun <SubState : State> gotoState(state: SubState) {
         stateFlow.emit(state)
-        whereInRuntime = createWhereIn(state).apply { onEnter() }
+        createWhereIn(state).let {
+            whereInRuntime = it
+            it.onEnter()
+        }
     }
 
     private suspend fun <SubState : State> onStartedWith(state: SubState) {
