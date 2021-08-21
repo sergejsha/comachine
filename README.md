@@ -1,2 +1,2 @@
 # comachine
-Finite-State Machine for Kotlin coroutines
+🚔 Finite-State Machine for Kotlin coroutines
