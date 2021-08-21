@@ -7,9 +7,9 @@ Finite-State Machine for Kotlin coroutines
 ```kotlin
 // define states and events
 sealed interface State {
-    object Solid : State
-    object Liquid : State
-    object Gas : State
+    data class Solid(val progress: String = "") : State
+    data class Liquid(val progress: String = "") : State
+    data class Gas(val progress: String = "") : State
 }
 
 
@@ -20,38 +20,38 @@ sealed interface Event {
 
 // define state machine
 val comachine = comachine<State, Event>(
-    startWith = State.Solid
+    startWith = State.Solid()
 ) {
     whenIn<State.Solid> {
         onExclusive<Event.OnHeat> {
-            println("melting...")
+            state.update { copy(progress = "melting...") }
             delay(500)
-            println("melted")
-            transitionTo { State.Liquid }
+            state.update { copy(progress = "melted") }
+            transitionTo { State.Liquid() }
         }
     }
 
     whenIn<State.Liquid> {
         onExclusive<Event.OnHeat> {
-            println("vaporizing...")
+            state.update { copy(progress = "vaporizing...") }
             delay(500)
-            println("vaporized")
-            transitionTo { State.Gas }
+            state.update { copy(progress = "vaporized") }
+            transitionTo { State.Gas() }
         }
         onExclusive<Event.OnCold> {
-            println("freezing...")
+            state.update { copy(progress = "freezing...") }
             delay(500)
-            println("frozen")
-            transitionTo { State.Solid }
+            state.update { copy(progress = "frozen") }
+            transitionTo { State.Solid() }
         }
     }
 
     whenIn<State.Gas> {
         onExclusive<Event.OnCold> {
-            println("condensing...")
+            state.update { copy(progress = "condensing...") }
             delay(500)
-            println("condensed")
-            transitionTo { State.Liquid }
+            state.update { copy(progress = "frozen") }
+            transitionTo { State.Liquid() }
         }
     }
 }
@@ -60,7 +60,7 @@ val comachine = comachine<State, Event>(
 runBlockingTest {
     launch {
         comachine.state.collect {
-            println("    ------ ${it::class.simpleName} ------")
+            println("------ $it ------")
         }
     }
     launch { comachine.loop() }
@@ -86,23 +86,23 @@ runBlockingTest {
 }
 
 // output
------- Solid ------
+----- Solid(progress=)
 OnHeat
-melting...
-melted
------- Liquid ------
+----- Solid(progress=melting...)
+----- Solid(progress=melted)
+----- Liquid(progress=)
 OnHeat
-vaporizing...
-vaporized
------- Gas ------
+----- Liquid(progress=vaporizing...)
+----- Liquid(progress=vaporized)
+----- Gas(progress=)
 OnCold
-condensing...
-condensed
------- Liquid ------
+----- Gas(progress=condensing...)
+----- Gas(progress=frozen)
+----- Liquid(progress=)
 OnCold
-freezing...
-frozen
------- Solid ------
+----- Liquid(progress=freezing...)
+----- Liquid(progress=frozen)
+----- Solid(progress=)
 ```
 
 # Binaries

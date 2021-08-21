@@ -10,9 +10,9 @@ import kotlin.test.Test
 class AggregateStatesTest {
 
     sealed interface State {
-        object Solid : State
-        object Liquid : State
-        object Gas : State
+        data class Solid(val progress: String = "") : State
+        data class Liquid(val progress: String = "") : State
+        data class Gas(val progress: String = "") : State
     }
 
 
@@ -25,38 +25,38 @@ class AggregateStatesTest {
     fun test_Comachine() {
 
         val comachine = comachine<State, Event>(
-            startWith = State.Solid
+            startWith = State.Solid()
         ) {
             whenIn<State.Solid> {
                 onExclusive<Event.OnHeat> {
-                    println("melting...")
+                    state.update { copy(progress = "melting...") }
                     delay(500)
-                    println("melted")
-                    transitionTo { State.Liquid }
+                    state.update { copy(progress = "melted") }
+                    transitionTo { State.Liquid() }
                 }
             }
 
             whenIn<State.Liquid> {
                 onExclusive<Event.OnHeat> {
-                    println("vaporizing...")
+                    state.update { copy(progress = "vaporizing...") }
                     delay(500)
-                    println("vaporized")
-                    transitionTo { State.Gas }
+                    state.update { copy(progress = "vaporized") }
+                    transitionTo { State.Gas() }
                 }
                 onExclusive<Event.OnCold> {
-                    println("freezing...")
+                    state.update { copy(progress = "freezing...") }
                     delay(500)
-                    println("frozen")
-                    transitionTo { State.Solid }
+                    state.update { copy(progress = "frozen") }
+                    transitionTo { State.Solid() }
                 }
             }
 
             whenIn<State.Gas> {
                 onExclusive<Event.OnCold> {
-                    println("condensing...")
+                    state.update { copy(progress = "condensing...") }
                     delay(500)
-                    println("condensed")
-                    transitionTo { State.Liquid }
+                    state.update { copy(progress = "frozen") }
+                    transitionTo { State.Liquid() }
                 }
             }
         }
@@ -64,7 +64,7 @@ class AggregateStatesTest {
         runBlockingTest {
             launch {
                 comachine.state.collect {
-                    println("    ------ ${it::class.simpleName} ------")
+                    println("----- $it")
                 }
             }
             launch { comachine.loop() }
