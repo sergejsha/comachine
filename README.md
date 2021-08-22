@@ -52,7 +52,7 @@ val comachine = comachine<State, Event>(
         onExclusive<Event.OnCold> {
             state.update { copy(progress = "condensing...") }
             delay(100)
-            state.update { copy(progress = "frozen") }
+            state.update { copy(progress = "condensed") }
             transitionTo { State.Liquid() }
         }
     }
@@ -94,7 +94,7 @@ OnHeat
 ------ Gas(progress=)
 OnCold
 ------ Gas(progress=condensing...)
------- Gas(progress=frozen)
+------ Gas(progress=condensed)
 ------ Liquid(progress=)
 OnCold
 ------ Liquid(progress=freezing...)

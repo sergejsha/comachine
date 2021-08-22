@@ -56,7 +56,7 @@ class AggregateStatesTest {
                 onExclusive<Event.OnCold> {
                     state.update { copy(progress = "condensing...") }
                     delay(100)
-                    state.update { copy(progress = "frozen") }
+                    state.update { copy(progress = "condensed") }
                     transitionTo { State.Liquid() }
                 }
             }
