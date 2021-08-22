@@ -1,4 +1,4 @@
-package de.halfbit.comachine.tests
+package de.halfbit.comachine.tests.utils
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope

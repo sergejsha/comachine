@@ -1,4 +1,4 @@
-package de.halfbit.comachine.tests
+package de.halfbit.comachine.tests.utils
 
 import de.halfbit.comachine.Comachine
 import kotlinx.coroutines.cancel

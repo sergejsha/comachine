@@ -2,6 +2,8 @@ package de.halfbit.comachine.tests
 
 import de.halfbit.comachine.comachine
 import de.halfbit.comachine.startInScope
+import de.halfbit.comachine.tests.utils.await
+import de.halfbit.comachine.tests.utils.executeBlockingTest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.yield
 import kotlin.test.Test

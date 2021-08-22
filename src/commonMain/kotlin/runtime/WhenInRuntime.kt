@@ -15,9 +15,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
-private typealias EventRuntimeMap<Event> =
-    MutableMap<KClass<out Event>, OnEventDispatcher<Event>>
-
 internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     private var state: SubState,
     private val whenIn: WhenIn<State, SubState>,
@@ -27,7 +24,8 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     private val onUpdateState: suspend (State) -> Unit,
     private val emitMessage: EmitMessage,
 ) {
-    private val eventRuntimes: EventRuntimeMap<Event> = mutableMapOf()
+    private val eventRuntimes: MutableMap<KClass<out Event>, OnEventDispatcher<Event>> =
+        mutableMapOf()
 
     private val stateScope: CoroutineScope by lazy {
         CoroutineScope(
@@ -79,47 +77,45 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
 
     @Suppress("UNCHECKED_CAST")
     private fun createRuntimeOrNull(eventType: KClass<out Event>): OnEventDispatcher<Event>? =
-        whenIn.onEvent
-            .find { it.eventType == eventType }
-            ?.let { onEvent ->
-                val onEventRuntime = OnEventRuntime<State, SubState>(
-                    getStateFct = ::getSubState,
-                    launchInStateFct = ::launchInState,
-                    launchInMachineFct = launchInMachineFct,
-                    updateStateFct = ::updateState,
-                    transitionToFct = ::transitionTo,
-                )
-                when (onEvent.eventDispatching) {
-                    EventDispatching.Sequential ->
-                        SequentialEventDispatcher(
-                            onEvent = onEvent,
-                            launchInStateFct = ::launchInState,
-                            emitMessage = emitMessage,
-                            onEventRuntime = onEventRuntime
-                        )
-                    EventDispatching.Concurrent ->
-                        ConcurrentEventDispatcher(
-                            onEvent = onEvent,
-                            launchInStateFct = ::launchInState,
-                            emitMessage = emitMessage,
-                            onEventRuntime = onEventRuntime
-                        )
-                    EventDispatching.Exclusive ->
-                        ExclusiveEventDispatcher(
-                            onEvent = onEvent,
-                            launchInStateFct = ::launchInState,
-                            emitMessage = emitMessage,
-                            onEventRuntime = onEventRuntime
-                        )
-                    EventDispatching.Latest ->
-                        LatestEventDispatcher(
-                            onEvent = onEvent,
-                            launchInStateFct = ::launchInState,
-                            emitMessage = emitMessage,
-                            onEventRuntime = onEventRuntime
-                        )
-                } as OnEventDispatcher<Event>
-            }
+        whenIn.onEvent[eventType]?.let { onEvent ->
+            val onEventRuntime = OnEventRuntime<State, SubState>(
+                getStateFct = ::getSubState,
+                launchInStateFct = ::launchInState,
+                launchInMachineFct = launchInMachineFct,
+                updateStateFct = ::updateState,
+                transitionToFct = ::transitionTo,
+            )
+            when (onEvent.eventDispatching) {
+                EventDispatching.Sequential ->
+                    SequentialEventDispatcher(
+                        onEvent = onEvent,
+                        launchInStateFct = ::launchInState,
+                        emitMessage = emitMessage,
+                        onEventRuntime = onEventRuntime
+                    )
+                EventDispatching.Concurrent ->
+                    ConcurrentEventDispatcher(
+                        onEvent = onEvent,
+                        launchInStateFct = ::launchInState,
+                        emitMessage = emitMessage,
+                        onEventRuntime = onEventRuntime
+                    )
+                EventDispatching.Exclusive ->
+                    ExclusiveEventDispatcher(
+                        onEvent = onEvent,
+                        launchInStateFct = ::launchInState,
+                        emitMessage = emitMessage,
+                        onEventRuntime = onEventRuntime
+                    )
+                EventDispatching.Latest ->
+                    LatestEventDispatcher(
+                        onEvent = onEvent,
+                        launchInStateFct = ::launchInState,
+                        emitMessage = emitMessage,
+                        onEventRuntime = onEventRuntime
+                    )
+            } as OnEventDispatcher<Event>
+        }
 
     fun onEnter() {
         whenIn.onEnter?.let { onEnter ->
