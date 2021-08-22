@@ -1,7 +1,10 @@
 # Comachine
-Finite-State Machine for Kotlin coroutines
+Finite-State Machine for Kotlin coroutines (multiplatform).
 
-**Status:** experimental
+The project is in early experimental stage, changes to the API are still possible.
+
+* Can I use it in production: No
+* Can I try it out in my not published app: Sure
 
 # Usage
 ```kotlin
@@ -12,13 +15,12 @@ sealed interface State {
     data class Gas(val progress: String = "") : State
 }
 
-
 sealed interface Event {
     object OnHeat : Event
     object OnCold : Event
 }
 
-// define state machine
+// define the state machine
 val comachine = comachine<State, Event>(
     startWith = State.Solid()
 ) {
@@ -56,7 +58,7 @@ val comachine = comachine<State, Event>(
     }
 }
 
-// run state machine
+// run the state machine
 runBlockingTest {
     launch {
         comachine.state.collect {
