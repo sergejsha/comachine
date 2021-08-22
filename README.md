@@ -2,6 +2,8 @@
 Finite-State Machine for Kotlin coroutines (multiplatform).
 
 The project is in early experimental stage, changes to the API are still possible.
+Can I use it in production: No
+Can I try it out in my not published app: Sure
 
 # Usage
 ```kotlin
