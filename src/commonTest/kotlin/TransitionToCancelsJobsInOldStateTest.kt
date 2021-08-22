@@ -6,7 +6,7 @@ import kotlinx.coroutines.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class TransitionToCancelsJobsInScopeTest {
+class TransitionToCancelsJobsInOldStateTest {
 
     sealed interface State {
         data class Loading(val progress: Int = 0) : State

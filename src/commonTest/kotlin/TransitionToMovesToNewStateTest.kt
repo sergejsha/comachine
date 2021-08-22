@@ -9,7 +9,7 @@ import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class TransitionToTest {
+class TransitionToMovesToNewStateTest {
 
     sealed interface State {
         data class Loading(
