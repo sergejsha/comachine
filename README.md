@@ -27,7 +27,7 @@ val comachine = comachine<State, Event>(
     whenIn<State.Solid> {
         onExclusive<Event.OnHeat> {
             state.update { copy(progress = "melting...") }
-            delay(500)
+            delay(100)
             state.update { copy(progress = "melted") }
             transitionTo { State.Liquid() }
         }
@@ -36,13 +36,13 @@ val comachine = comachine<State, Event>(
     whenIn<State.Liquid> {
         onExclusive<Event.OnHeat> {
             state.update { copy(progress = "vaporizing...") }
-            delay(500)
+            delay(100)
             state.update { copy(progress = "vaporized") }
             transitionTo { State.Gas() }
         }
         onExclusive<Event.OnCold> {
             state.update { copy(progress = "freezing...") }
-            delay(500)
+            delay(100)
             state.update { copy(progress = "frozen") }
             transitionTo { State.Solid() }
         }
@@ -51,7 +51,7 @@ val comachine = comachine<State, Event>(
     whenIn<State.Gas> {
         onExclusive<Event.OnCold> {
             state.update { copy(progress = "condensing...") }
-            delay(500)
+            delay(100)
             state.update { copy(progress = "frozen") }
             transitionTo { State.Liquid() }
         }
@@ -60,51 +60,46 @@ val comachine = comachine<State, Event>(
 
 // run the state machine
 runBlockingTest {
-    launch {
-        comachine.state.collect {
-            println("------ $it ------")
-        }
-    }
-    launch { comachine.loop() }
-    delay(500)
+    launch { comachine.state.collect { println("------ $it") } }
+    comachine.startInScope(this)
 
     println("OnHeat")
     comachine.send(Event.OnHeat)
-    delay(1000)
+    comachine.await<State.Liquid>()
 
     println("OnHeat")
     comachine.send(Event.OnHeat)
-    delay(1000)
+    comachine.await<State.Gas>()
 
     println("OnCold")
     comachine.send(Event.OnCold)
-    delay(1000)
+    comachine.await<State.Liquid>()
 
     println("OnCold")
     comachine.send(Event.OnCold)
-    delay(1000)
+    comachine.await<State.Solid>()
 
     coroutineContext.cancelChildren()
 }
 
 // output
------ Solid(progress=)
+------ Solid(progress=)
 OnHeat
------ Solid(progress=melting...)
------ Solid(progress=melted)
------ Liquid(progress=)
+------ Solid(progress=melting...)
+------ Solid(progress=melted)
+------ Liquid(progress=)
 OnHeat
------ Liquid(progress=vaporizing...)
------ Liquid(progress=vaporized)
------ Gas(progress=)
+------ Liquid(progress=vaporizing...)
+------ Liquid(progress=vaporized)
+------ Gas(progress=)
 OnCold
------ Gas(progress=condensing...)
------ Gas(progress=frozen)
------ Liquid(progress=)
+------ Gas(progress=condensing...)
+------ Gas(progress=frozen)
+------ Liquid(progress=)
 OnCold
------ Liquid(progress=freezing...)
------ Liquid(progress=frozen)
------ Solid(progress=)
+------ Liquid(progress=freezing...)
+------ Liquid(progress=frozen)
+------ Solid(progress=)
 ```
 
 # Binaries
@@ -112,13 +107,13 @@ OnCold
 // in project build file
 allprojects {
     repositories {
-        mavenCentral()
+        ...
         maven { url = "https://oss.sonatype.org/content/repositories/snapshots/" }
     }
 }
 
 // in module build file
 dependencies {
-    implementation 'de.halfbit:comachine-jvm:1.0-SNAPSHOT'
+    implementation 'de.halfbit:comachine-jvm:0.1-SNAPSHOT'
 }
 ```
