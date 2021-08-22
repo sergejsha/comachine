@@ -43,6 +43,15 @@ kotlin {
     }
 
     sourceSets {
+
+        matching { it.name.endsWith("Test") }.all {
+            languageSettings {
+                useExperimentalAnnotation("kotlin.time.ExperimentalTime")
+                useExperimentalAnnotation("kotlinx.coroutines.DelicateCoroutinesApi")
+                useExperimentalAnnotation("kotlinx.coroutines.ExperimentalCoroutinesApi")
+            }
+        }
+
         val commonMain by getting {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")

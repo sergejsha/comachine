@@ -1,6 +1,7 @@
 package de.halfbit.comachine.tests
 
 import de.halfbit.comachine.comachine
+import de.halfbit.comachine.startInScope
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -83,17 +84,20 @@ class ComachineTest {
             }
         }
 
-        runBlockingTest {
-            launch { comachine.state.collect { println("    ------ $it ------") } }
+        executeBlocking {
+            launch {
+                comachine.state.collect {
+                    println("    ------ $it")
+                }
+            }
+            comachine.startInScope(this)
 
-            launch { comachine.loop() }
-            delay(5000)
-
+            comachine.await<State.Ready>()
             comachine.send(Event.SetPlaying(playing = true))
             comachine.send(Event.SetPlaying(playing = false))
             comachine.send(Event.SetPlaying(playing = true))
             comachine.send(Event.SetPlaying(playing = false))
-            delay(4000)
+            delay(1000)
 
             println("... cancelling")
             coroutineContext.cancelChildren()

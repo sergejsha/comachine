@@ -2,12 +2,12 @@ package de.halfbit.comachine.dsl
 
 import de.halfbit.comachine.Comachine
 import de.halfbit.comachine.runtime.ComachineRuntime
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.job
 import kotlin.reflect.KClass
 
 @DslMarker
@@ -54,10 +54,10 @@ private class DefaultComachine<State : Any, Event : Any>(
         }.send(event)
     }
 
-    override suspend fun loop() {
+    override suspend fun loop(onStarted: CompletableDeferred<Unit>?) {
         // todo: assert not yet looping
         coroutineScope {
-            val machineScope = CoroutineScope(Job(coroutineContext.job))
+            val machineScope = CoroutineScope(Job(coroutineContext[Job]))
             val machineRuntime = ComachineRuntime<State, Event>(
                 state = startWith,
                 machineScope = machineScope,
@@ -65,7 +65,7 @@ private class DefaultComachine<State : Any, Event : Any>(
                 whenIns = whenIns,
             )
             comachineRuntime = machineRuntime
-            machineRuntime.loop()
+            machineRuntime.loop(onStarted)
         }
     }
 }

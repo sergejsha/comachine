@@ -1,6 +1,7 @@
 package de.halfbit.comachine.runtime
 
 import de.halfbit.comachine.dsl.WhenIn
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -35,12 +36,15 @@ internal class ComachineRuntime<State : Any, Event : Any>(
         messageFlow.emit(Message.OnEventReceived(event))
     }
 
-    suspend fun loop() {
+    suspend fun loop(onStarted: CompletableDeferred<Unit>?) {
         messageFlow
             .onSubscription { emit(Message.OnStartedWith(state)) }
             .collect {
                 when (it) {
-                    is Message.OnStartedWith -> onStartedWith(it.state as State)
+                    is Message.OnStartedWith -> {
+                        onStartedWith(it.state as State)
+                        onStarted?.complete(Unit)
+                    }
                     is Message.OnEventReceived -> onEventReceived(it.event as Event)
                     is Message.OnEventCompleted -> onEventCompleted(it.event as Event)
                     is Message.OnCallback -> it.callback()

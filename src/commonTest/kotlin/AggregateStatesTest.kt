@@ -1,6 +1,7 @@
 package de.halfbit.comachine.tests
 
 import de.halfbit.comachine.comachine
+import de.halfbit.comachine.startInScope
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -30,7 +31,7 @@ class AggregateStatesTest {
             whenIn<State.Solid> {
                 onExclusive<Event.OnHeat> {
                     state.update { copy(progress = "melting...") }
-                    delay(500)
+                    delay(100)
                     state.update { copy(progress = "melted") }
                     transitionTo { State.Liquid() }
                 }
@@ -39,13 +40,13 @@ class AggregateStatesTest {
             whenIn<State.Liquid> {
                 onExclusive<Event.OnHeat> {
                     state.update { copy(progress = "vaporizing...") }
-                    delay(500)
+                    delay(100)
                     state.update { copy(progress = "vaporized") }
                     transitionTo { State.Gas() }
                 }
                 onExclusive<Event.OnCold> {
                     state.update { copy(progress = "freezing...") }
-                    delay(500)
+                    delay(100)
                     state.update { copy(progress = "frozen") }
                     transitionTo { State.Solid() }
                 }
@@ -54,37 +55,36 @@ class AggregateStatesTest {
             whenIn<State.Gas> {
                 onExclusive<Event.OnCold> {
                     state.update { copy(progress = "condensing...") }
-                    delay(500)
+                    delay(100)
                     state.update { copy(progress = "frozen") }
                     transitionTo { State.Liquid() }
                 }
             }
         }
 
-        runBlockingTest {
+        executeBlocking {
             launch {
                 comachine.state.collect {
-                    println("----- $it")
+                    println("------ $it")
                 }
             }
-            launch { comachine.loop() }
-            delay(500)
+            comachine.startInScope(this)
 
             println("OnHeat")
             comachine.send(Event.OnHeat)
-            delay(1000)
+            comachine.await<State.Liquid>()
 
             println("OnHeat")
             comachine.send(Event.OnHeat)
-            delay(1000)
+            comachine.await<State.Gas>()
 
             println("OnCold")
             comachine.send(Event.OnCold)
-            delay(1000)
+            comachine.await<State.Liquid>()
 
             println("OnCold")
             comachine.send(Event.OnCold)
-            delay(1000)
+            comachine.await<State.Solid>()
 
             coroutineContext.cancelChildren()
         }

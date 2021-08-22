@@ -2,18 +2,17 @@ package de.halfbit.comachine.runtime
 
 import de.halfbit.comachine.dsl.EventDispatching
 import de.halfbit.comachine.dsl.WhenIn
-import de.halfbit.comachine.runtime.dispatchers.SequentialEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.ConcurrentEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.ExclusiveEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.LatestEventDispatcher
+import de.halfbit.comachine.runtime.dispatchers.SequentialEventDispatcher
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.reflect.KClass
 
 private typealias EventRuntimeMap<Event> =
@@ -32,7 +31,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
 
     private val stateScope: CoroutineScope by lazy {
         CoroutineScope(
-            SupervisorJob(machineScope.coroutineContext.job)
+            SupervisorJob(machineScope.coroutineContext[Job])
         )
     }
 
@@ -44,38 +43,38 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 
     private suspend fun updateState(block: (SubState) -> SubState) {
-        suspendCoroutine<Unit> { cont ->
-            stateScope.launch {
-                emitMessage(
-                    Message.OnCallback(
-                        callback = {
-                            if (stateScope.isActive) {
-                                state = block(state)
-                                onUpdateState(state)
-                            }
-                            cont.resume(Unit)
+        val called = CompletableDeferred<Unit>()
+        stateScope.launch {
+            emitMessage(
+                Message.OnCallback(
+                    callback = {
+                        if (stateScope.isActive) {
+                            state = block(state)
+                            onUpdateState(state)
                         }
-                    )
+                        called.complete(Unit)
+                    }
                 )
-            }
+            )
         }
+        called.await()
     }
 
     private suspend fun transitionTo(block: (SubState) -> State) {
-        suspendCoroutine<Unit> { cont ->
-            stateScope.launch {
-                emitMessage(
-                    Message.OnCallback(
-                        callback = {
-                            if (stateScope.isActive) {
-                                onTransitionTo(block(state))
-                            }
-                            cont.resume(Unit)
+        val called = CompletableDeferred<Unit>()
+        stateScope.launch {
+            emitMessage(
+                Message.OnCallback(
+                    callback = {
+                        if (stateScope.isActive) {
+                            onTransitionTo(block(state))
                         }
-                    )
+                        called.complete(Unit)
+                    }
                 )
-            }
+            )
         }
+        called.await()
     }
 
     @Suppress("UNCHECKED_CAST")

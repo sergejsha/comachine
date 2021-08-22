@@ -2,4 +2,4 @@ package de.halfbit.comachine.tests
 
 import kotlinx.coroutines.CoroutineScope
 
-expect fun runBlockingTest(block: suspend CoroutineScope.() -> Unit)
+expect fun executeBlocking(block: suspend CoroutineScope.() -> Unit)
