@@ -1,7 +1,7 @@
 # Comachine
-Finite-State Machine for Kotlin coroutines
+Finite-State Machine with Kotlin coroutines
 
-**Status:** experimental
+The project is in early experimental stage, changes to the API are still possible.
 
 # Usage
 ```kotlin
