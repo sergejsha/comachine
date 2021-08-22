@@ -113,6 +113,6 @@ allprojects {
 
 // in module build file
 dependencies {
-    implementation 'de.halfbit:comachine-jvm:0.1-SNAPSHOT'
+    implementation 'de.halfbit:comachine-jvm:1.0-SNAPSHOT'
 }
 ```
