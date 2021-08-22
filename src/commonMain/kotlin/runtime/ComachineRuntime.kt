@@ -30,7 +30,7 @@ internal class ComachineRuntime<State : Any, Event : Any>(
 ) {
 
     private val messageFlow = MutableSharedFlow<Message>()
-    private lateinit var whereInRuntime: WhenInRuntime<State, out State, Event>
+    private var whereInRuntime: WhenInRuntime<State, out State, Event>? = null
 
     suspend fun send(event: Event) {
         messageFlow.emit(Message.OnEventReceived(event))
@@ -57,26 +57,24 @@ internal class ComachineRuntime<State : Any, Event : Any>(
 
     private fun <SubState : State> createWhereIn(
         state: SubState
-    ): WhenInRuntime<State, SubState, Event> {
-        val whenIn = whenIns[state::class] as? WhenIn<State, SubState>
-            ?: error("whenIn<${state::class.simpleName}> { } declaration is expected")
-        return WhenInRuntime(
-            state = state,
-            whenIn = whenIn,
-            machineScope = machineScope,
-            launchInMachineFct = ::launchInMachine,
-            onTransitionTo = ::onTransitionTo,
-            onUpdateState = ::onUpdateState,
-            emitMessage = messageFlow::emit,
-        )
-    }
+    ): WhenInRuntime<State, SubState, Event>? =
+        (whenIns[state::class] as? WhenIn<State, SubState>)
+            ?.let {
+                WhenInRuntime(
+                    state = state,
+                    whenIn = it,
+                    machineScope = machineScope,
+                    launchInMachineFct = ::launchInMachine,
+                    onTransitionTo = ::onTransitionTo,
+                    onUpdateState = ::onUpdateState,
+                    emitMessage = messageFlow::emit,
+                )
+            }
 
     private suspend fun <SubState : State> gotoState(state: SubState) {
         stateFlow.emit(state)
-        createWhereIn(state).let {
-            whereInRuntime = it
-            it.onEnter()
-        }
+        whereInRuntime = createWhereIn(state)
+        whereInRuntime?.onEnter()
     }
 
     private suspend fun <SubState : State> onStartedWith(state: SubState) {
@@ -84,15 +82,16 @@ internal class ComachineRuntime<State : Any, Event : Any>(
     }
 
     private fun onEventReceived(event: Event) {
-        whereInRuntime.onEventReceived(event)
+        checkNotNull(whereInRuntime) { "WhenIn block is missing for $event in $state" }
+            .onEventReceived(event)
     }
 
     private fun onEventCompleted(event: Event) {
-        whereInRuntime.onEventCompleted(event)
+        whereInRuntime?.onEventCompleted(event)
     }
 
     private suspend fun onTransitionTo(state: State) {
-        whereInRuntime.onExit()
+        whereInRuntime?.onExit()
         gotoState(state)
     }
 

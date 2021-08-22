@@ -10,9 +10,9 @@ import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class UpdateStateFromSingleEventHandler {
+class UpdateStateSingleEventTest {
 
-    data class Loading(
+    data class State(
         val location: String = "location",
         val progress: Int = 0,
         val asset: String? = null,
@@ -28,10 +28,10 @@ class UpdateStateFromSingleEventHandler {
     @Test
     fun test() {
 
-        val machine = comachine<Loading, Unit>(
-            startWith = Loading()
+        val machine = comachine<State, Unit>(
+            startWith = State()
         ) {
-            whenIn<Loading> {
+            whenIn<State> {
                 onEnter {
                     state.update { copy(progress = progress + 1) }
 
@@ -54,22 +54,22 @@ class UpdateStateFromSingleEventHandler {
 
         executeBlockingTest {
 
-            val states = mutableListOf<Loading>()
+            val states = mutableListOf<State>()
             val job = launch {
                 machine.state.collect { states.add(it) }
             }
 
             machine.startInScope(this)
-            machine.await<Loading> { asset != null }
+            machine.await<State> { asset != null }
             job.cancel()
 
             assertEquals(
                 listOf(
-                    Loading(progress = 0),
-                    Loading(progress = 1),
-                    Loading(progress = 2),
-                    Loading(progress = 3),
-                    Loading(progress = 3, asset = "locomotive breath @location"),
+                    State(progress = 0),
+                    State(progress = 1),
+                    State(progress = 2),
+                    State(progress = 3),
+                    State(progress = 3, asset = "locomotive breath @location"),
                 ),
                 states
             )

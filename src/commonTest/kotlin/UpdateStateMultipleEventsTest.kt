@@ -7,7 +7,7 @@ import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class UpdateStateFromMultipleEventHandlersTest {
+class UpdateStateMultipleEventsTest {
 
     data class State(
         val progress: Int = 0,
@@ -19,7 +19,9 @@ class UpdateStateFromMultipleEventHandlersTest {
     @Test
     fun test() {
 
-        val machine = comachine<State, Event>(startWith = State()) {
+        val machine = comachine<State, Event>(
+            startWith = State()
+        ) {
             whenIn<State> {
                 onEnter {
                     for (i in 0..99) {
