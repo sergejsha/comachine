@@ -64,8 +64,10 @@ class TransitionToMovesToNewStateTest {
             whenIn<State.Loading> {
                 val loadingCompleted = CompletableDeferred<Unit>()
                 onEnter {
-                    val asset = Actions.loadAsset(state.location, loadingCompleted)
-                    transitionTo { State.Ready(asset, startPlaying) }
+                    launch {
+                        val asset = Actions.loadAsset(state.location, loadingCompleted)
+                        transitionTo { State.Ready(asset, startPlaying) }
+                    }
                 }
                 onSequential<Event.Playing> { event ->
                     state.update { copy(startPlaying = event.playing) }
@@ -74,7 +76,9 @@ class TransitionToMovesToNewStateTest {
             }
             whenIn<State.Ready> {
                 onEnter {
-                    Actions.play(state.asset, state.playing)
+                    launch {
+                        Actions.play(state.asset, state.playing)
+                    }
                 }
                 onSequential<Event.Playing> { event ->
                     Actions.setPlaying(event.playing)

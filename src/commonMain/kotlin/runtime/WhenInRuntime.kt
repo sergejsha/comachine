@@ -126,7 +126,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
                 updateStateFct = ::updateState,
                 transitionToFct = ::transitionTo,
             )
-            launchInState { onEnter.block(onEnterRuntime) }
+            onEnter.block(onEnterRuntime)
         }
     }
 

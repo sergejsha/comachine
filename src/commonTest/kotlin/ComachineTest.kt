@@ -8,7 +8,6 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import kotlin.test.Test
 
 class ComachineTest {
@@ -45,7 +44,6 @@ class ComachineTest {
 
             whenIn<State.Loading> {
                 onEnter {
-                    yield()
                     println("### Loading entered")
 
                     val progressUpdate = launch {
@@ -55,12 +53,14 @@ class ComachineTest {
                         }
                     }
 
-                    val asset = Actions.loadAsset()
-                    println("### asset loaded!")
+                    launch {
+                        val asset = Actions.loadAsset()
+                        println("### asset loaded!")
 
-                    progressUpdate.cancel()
-                    state.update { copy(loadingProgress = 100) }
-                    transitionTo { State.Ready(asset) }
+                        progressUpdate.cancel()
+                        state.update { copy(loadingProgress = 100) }
+                        transitionTo { State.Ready(asset) }
+                    }
                 }
 
                 onExit {
@@ -70,7 +70,6 @@ class ComachineTest {
 
             whenIn<State.Ready> {
                 onEnter {
-                    yield()
                     println("### Ready entered")
                 }
 

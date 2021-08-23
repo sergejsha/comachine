@@ -4,7 +4,7 @@ import kotlinx.coroutines.Job
 
 @PublishedApi
 internal data class OnEnter<State : Any, SubState : State>(
-    val block: suspend OnEnterBlock<State, SubState>.() -> Unit,
+    val block: OnEnterBlock<State, SubState>.() -> Unit,
 )
 
 @ComachineDsl

@@ -26,13 +26,15 @@ class UpdateStateMultipleEventsTest {
         ) {
             whenIn<State> {
                 onEnter {
-                    for (i in 0..99) {
-                        state.update { copy(progress = progress + 1) }
-                        if (i % 5 == 0) {
-                            yield()
+                    launch {
+                        for (i in 0..99) {
+                            state.update { copy(progress = progress + 1) }
+                            if (i % 5 == 0) {
+                                yield()
+                            }
                         }
+                        state.update { copy(done = done + 1) }
                     }
-                    state.update { copy(done = done + 1) }
                 }
                 onConcurrent<Event> {
                     for (i in 0..9) {

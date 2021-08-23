@@ -46,7 +46,7 @@ internal constructor(
         addUnique(OnEvent(SubEvent::class, EventDispatching.Exclusive, block))
     }
 
-    fun onEnter(block: suspend OnEnterBlock<State, SubState>.() -> Unit) {
+    fun onEnter(block: OnEnterBlock<State, SubState>.() -> Unit) {
         whenIn.onEnter = OnEnter(block)
     }
 
