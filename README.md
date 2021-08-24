@@ -1,6 +1,8 @@
 # Comachine
 Finite-State Machine for Kotlin coroutines (multiplatform).
 
+Work in progress. Some changes to API are possible.
+
 # Usage
 ```kotlin
 // define states and events
