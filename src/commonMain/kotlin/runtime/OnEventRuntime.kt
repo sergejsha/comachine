@@ -23,11 +23,10 @@ internal class OnEventRuntime<State : Any, SubState : State>(
         throw CancellationException()
     }
 
-    override fun launch(block: suspend () -> Unit) {
+    override fun launch(block: suspend () -> Unit) =
         launchInStateFct(block)
-    }
 
-    override fun launchInMachine(block: suspend () -> Unit) {
+
+    override fun launchInMachine(block: suspend () -> Unit) =
         launchInMachineFct(block)
-    }
 }

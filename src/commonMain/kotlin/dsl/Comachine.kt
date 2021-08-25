@@ -5,6 +5,7 @@ import de.halfbit.comachine.runtime.ComachineRuntime
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -41,10 +42,15 @@ internal constructor(
 private class DefaultComachine<State : Any, Event : Any>(
     private val startWith: State,
     private val whenIns: WhenInsMap<State, out State> = mutableMapOf(),
+    stateExtraBufferCapacity: Int = 16,
 ) : Comachine<State, Event> {
 
-    private val stateFlow = MutableSharedFlow<State>(replay = 1)
     private var comachineRuntime: ComachineRuntime<State, Event>? = null
+    private val stateFlow = MutableSharedFlow<State>(
+        replay = 1,
+        extraBufferCapacity = stateExtraBufferCapacity,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
 
     override val state: Flow<State> get() = stateFlow
 
@@ -55,7 +61,7 @@ private class DefaultComachine<State : Any, Event : Any>(
     }
 
     override suspend fun loop(onStarted: CompletableDeferred<Unit>?) {
-        // todo: assert not yet looping
+        check(comachineRuntime == null) { "Event loop is already started" }
         coroutineScope {
             val machineScope = CoroutineScope(Job(coroutineContext[Job]))
             val machineRuntime = ComachineRuntime<State, Event>(
@@ -65,7 +71,11 @@ private class DefaultComachine<State : Any, Event : Any>(
                 whenIns = whenIns,
             )
             comachineRuntime = machineRuntime
-            machineRuntime.loop(onStarted)
+            try {
+                machineRuntime.loop(onStarted)
+            } finally {
+                comachineRuntime = null
+            }
         }
     }
 }

@@ -7,11 +7,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
 internal typealias LaunchInState = (suspend () -> Unit) -> Job
-internal typealias LaunchInMachine = (suspend () -> Unit) -> Unit
+internal typealias LaunchInMachine = (suspend () -> Unit) -> Job
 internal typealias EmitMessage = suspend (Message) -> Unit
 
 internal sealed interface Message {
@@ -28,7 +27,6 @@ internal class ComachineRuntime<State : Any, Event : Any>(
     private val stateFlow: MutableSharedFlow<State>,
     private val whenIns: MutableMap<KClass<out State>, WhenIn<State, out State>>,
 ) {
-
     private val messageFlow = MutableSharedFlow<Message>()
     private var whereInRuntime: WhenInRuntime<State, out State, Event>? = null
 
@@ -42,7 +40,7 @@ internal class ComachineRuntime<State : Any, Event : Any>(
             .collect {
                 when (it) {
                     is Message.OnStartedWith -> {
-                        onStartedWith(it.state as State)
+                        transitionTo(it.state as State)
                         onStarted?.complete(Unit)
                     }
                     is Message.OnEventReceived -> onEventReceived(it.event as Event)
@@ -51,9 +49,6 @@ internal class ComachineRuntime<State : Any, Event : Any>(
                 }
             }
     }
-
-    private fun launchInMachine(block: suspend () -> Unit) =
-        machineScope.launch { block() }
 
     private fun <SubState : State> createWhereIn(
         state: SubState
@@ -64,22 +59,11 @@ internal class ComachineRuntime<State : Any, Event : Any>(
                     state = state,
                     whenIn = it,
                     machineScope = machineScope,
-                    launchInMachineFct = ::launchInMachine,
-                    onTransitionTo = ::onTransitionTo,
-                    onUpdateState = ::onUpdateState,
+                    transitionToFct = ::transitionTo,
+                    emitStateFct = ::emitState,
                     emitMessage = messageFlow::emit,
                 )
             }
-
-    private suspend fun <SubState : State> gotoState(state: SubState) {
-        stateFlow.emit(state)
-        whereInRuntime = createWhereIn(state)
-        whereInRuntime?.onEnter()
-    }
-
-    private suspend fun <SubState : State> onStartedWith(state: SubState) {
-        gotoState(state)
-    }
 
     private fun onEventReceived(event: Event) {
         checkNotNull(whereInRuntime) { "WhenIn block is missing for $event in $state" }
@@ -90,12 +74,17 @@ internal class ComachineRuntime<State : Any, Event : Any>(
         whereInRuntime?.onEventCompleted(event)
     }
 
-    private suspend fun onTransitionTo(state: State) {
+    private fun transitionTo(state: State) {
         whereInRuntime?.onExit()
-        gotoState(state)
+        emitState(state)
+        whereInRuntime = createWhereIn(state)
+        whereInRuntime?.onEnter()
     }
 
-    private suspend fun onUpdateState(state: State) {
-        stateFlow.emit(state)
+    private fun emitState(state: State) {
+        check(stateFlow.tryEmit(state)) {
+            "StateFlow suspends although it never should." +
+                " Please report this bug to https://github.com/beworker/comachine/"
+        }
     }
 }

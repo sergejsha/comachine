@@ -1,6 +1,8 @@
 package de.halfbit.comachine.runtime
 
 import de.halfbit.comachine.dsl.EventDispatching
+import de.halfbit.comachine.dsl.LaunchBlock
+import de.halfbit.comachine.dsl.LaunchBlockReceiver
 import de.halfbit.comachine.dsl.WhenIn
 import de.halfbit.comachine.runtime.dispatchers.ConcurrentEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.ExclusiveEventDispatcher
@@ -19,9 +21,8 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     private var state: SubState,
     private val whenIn: WhenIn<State, SubState>,
     private val machineScope: CoroutineScope,
-    private val launchInMachineFct: LaunchInMachine,
-    private val onTransitionTo: suspend (State) -> Unit,
-    private val onUpdateState: suspend (State) -> Unit,
+    private val transitionToFct: (State) -> Unit,
+    private val emitStateFct: (State) -> Unit,
     private val emitMessage: EmitMessage,
 ) {
     private val eventRuntimes: MutableMap<KClass<out Event>, OnEventDispatcher<Event>> =
@@ -33,11 +34,36 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
         )
     }
 
+    private val launchBlockReceiver: LaunchBlock<State, SubState> by lazy {
+        LaunchBlockRuntime(
+            getStateFct = ::getState,
+            stateScope = stateScope,
+            machineScope = machineScope,
+            updateStateFct = ::updateState,
+            transitionToFct = ::transitionTo,
+        )
+    }
+
     private fun launchInState(block: suspend () -> Unit) =
         stateScope.launch { block() }
 
-    private fun getSubState(): SubState {
-        return state
+    private fun launchInState(block: LaunchBlockReceiver<State, SubState>) =
+        stateScope.launch { block(launchBlockReceiver) }
+
+    private fun launchInMachine(block: suspend () -> Unit) =
+        machineScope.launch { block() }
+
+    private fun launchInMachine(block: LaunchBlockReceiver<State, SubState>) =
+        machineScope.launch { block(launchBlockReceiver) }
+
+    private fun getState(): SubState = state
+    private fun setState(newState: SubState) {
+        state = newState
+    }
+
+    private fun updateState(newState: SubState) {
+        state = newState
+        emitStateFct(newState)
     }
 
     private suspend fun updateState(block: (SubState) -> SubState) {
@@ -47,8 +73,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
                 Message.OnCallback(
                     callback = {
                         if (stateScope.isActive) {
-                            state = block(state)
-                            onUpdateState(state)
+                            updateState(block(state))
                         }
                         called.complete(Unit)
                     }
@@ -65,7 +90,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
                 Message.OnCallback(
                     callback = {
                         if (stateScope.isActive) {
-                            onTransitionTo(block(state))
+                            transitionToFct(block(state))
                         }
                         called.complete(Unit)
                     }
@@ -79,9 +104,9 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     private fun createRuntimeOrNull(eventType: KClass<out Event>): OnEventDispatcher<Event>? =
         whenIn.onEvent[eventType]?.let { onEvent ->
             val onEventRuntime = OnEventRuntime<State, SubState>(
-                getStateFct = ::getSubState,
+                getStateFct = ::getState,
                 launchInStateFct = ::launchInState,
-                launchInMachineFct = launchInMachineFct,
+                launchInMachineFct = ::launchInMachine,
                 updateStateFct = ::updateState,
                 transitionToFct = ::transitionTo,
             )
@@ -119,12 +144,12 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
 
     fun onEnter() {
         whenIn.onEnter?.let { onEnter ->
-            val onEnterRuntime = OnEnterRuntime<State, SubState>(
-                getStateFct = ::getSubState,
+            val onEnterRuntime = OnEnterRuntime(
+                getStateFct = ::getState,
+                setStateFct = ::setState,
                 launchInStateFct = ::launchInState,
-                launchInMachineFct = launchInMachineFct,
-                updateStateFct = ::updateState,
-                transitionToFct = ::transitionTo,
+                launchInMachineFct = ::launchInMachine,
+                transitionToFct = transitionToFct,
             )
             onEnter.block(onEnterRuntime)
         }
@@ -145,8 +170,8 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     fun onExit() {
         whenIn.onExit?.let { onExit ->
             val onExitRuntime = OnExitRuntime(
-                getStateFct = ::getSubState,
-                launchInMachineFct = launchInMachineFct,
+                getStateFct = ::getState,
+                launchInMachineFct = ::launchInMachine,
             )
             onExit.block(onExitRuntime)
         }

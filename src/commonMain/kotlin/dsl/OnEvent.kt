@@ -1,5 +1,6 @@
 package de.halfbit.comachine.dsl
 
+import kotlinx.coroutines.Job
 import kotlin.reflect.KClass
 
 @PublishedApi
@@ -19,6 +20,6 @@ interface OnEventBlock<State : Any, SubState : State> {
     val state: SubState
     suspend fun SubState.update(block: SubState.() -> SubState)
     suspend fun transitionTo(block: SubState.() -> State): Nothing
-    fun launch(block: suspend () -> Unit)
-    fun launchInMachine(block: suspend () -> Unit)
+    fun launch(block: suspend () -> Unit): Job
+    fun launchInMachine(block: suspend () -> Unit): Job
 }
