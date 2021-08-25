@@ -15,6 +15,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.reflect.KClass
 
 internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
@@ -25,7 +26,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     private val emitStateFct: (State) -> Unit,
     private val emitMessage: EmitMessage,
 ) {
-    private val eventRuntimes: MutableMap<KClass<out Event>, OnEventDispatcher<Event>> =
+    private val onEventDispatchers: MutableMap<KClass<out Event>, OnEventDispatcher<Event>> =
         mutableMapOf()
 
     private val stateScope: CoroutineScope by lazy {
@@ -157,14 +158,14 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
 
     fun onEventReceived(event: Event) {
         val eventType = event::class
-        val eventRuntime = eventRuntimes[eventType]
+        val eventRuntime = onEventDispatchers[eventType]
             ?: createRuntimeOrNull(eventType)
-                ?.also { eventRuntimes[eventType] = it }
+                ?.also { onEventDispatchers[eventType] = it }
         eventRuntime?.onEventReceived(event)
     }
 
     fun onEventCompleted(event: Event) {
-        eventRuntimes[event::class]?.onEventCompleted(event)
+        onEventDispatchers[event::class]?.onEventCompleted(event)
     }
 
     fun onExit() {
@@ -177,4 +178,35 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
         }
         stateScope.cancel()
     }
+}
+
+internal interface OnEventDispatcher<SubEvent : Any> {
+    fun onEventReceived(event: SubEvent)
+    fun onEventCompleted(event: SubEvent)
+}
+
+private class LaunchBlockRuntime<State : Any, SubState : State>(
+    private val getStateFct: () -> SubState,
+    private val stateScope: CoroutineScope,
+    private val machineScope: CoroutineScope,
+    private val updateStateFct: suspend ((SubState) -> SubState) -> Unit,
+    private val transitionToFct: suspend ((SubState) -> State) -> Unit,
+) : LaunchBlock<State, SubState> {
+
+    override val state: SubState get() = getStateFct()
+
+    override suspend fun SubState.update(block: SubState.() -> SubState) {
+        updateStateFct(block)
+    }
+
+    override suspend fun transitionTo(block: SubState.() -> State): Nothing {
+        transitionToFct(block)
+        throw CancellationException()
+    }
+
+    override fun launch(block: LaunchBlockReceiver<State, SubState>): Job =
+        stateScope.launch { block(this@LaunchBlockRuntime) }
+
+    override fun launchInMachine(block: LaunchBlockReceiver<State, SubState>): Job =
+        machineScope.launch { block(this@LaunchBlockRuntime) }
 }
