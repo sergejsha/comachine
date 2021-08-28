@@ -35,7 +35,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
         )
     }
 
-    private val launchBlockReceiver: LaunchBlock<State, SubState> by lazy {
+    private val launchBlock: LaunchBlock<State, SubState> by lazy {
         LaunchBlockRuntime(
             getStateFct = ::getState,
             stateScope = stateScope,
@@ -49,13 +49,13 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
         stateScope.launch { block() }
 
     private fun launchInState(block: LaunchBlockReceiver<State, SubState>) =
-        stateScope.launch { block(launchBlockReceiver) }
+        stateScope.launch { block(launchBlock) }
 
     private fun launchInMachine(block: suspend () -> Unit) =
         machineScope.launch { block() }
 
     private fun launchInMachine(block: LaunchBlockReceiver<State, SubState>) =
-        machineScope.launch { block(launchBlockReceiver) }
+        machineScope.launch { block(launchBlock) }
 
     private fun getState(): SubState = state
     private fun setState(newState: SubState) {
@@ -104,41 +104,34 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     @Suppress("UNCHECKED_CAST")
     private fun createRuntimeOrNull(eventType: KClass<out Event>): OnEventDispatcher<Event>? =
         whenIn.onEvent[eventType]?.let { onEvent ->
-            val onEventRuntime = OnEventRuntime<State, SubState>(
-                getStateFct = ::getState,
-                launchInStateFct = ::launchInState,
-                launchInMachineFct = ::launchInMachine,
-                updateStateFct = ::updateState,
-                transitionToFct = ::transitionTo,
-            )
             when (onEvent.eventDispatching) {
                 EventDispatching.Sequential ->
                     SequentialEventDispatcher(
                         onEvent = onEvent,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
-                        onEventRuntime = onEventRuntime
+                        launchBlock = launchBlock
                     )
                 EventDispatching.Concurrent ->
                     ConcurrentEventDispatcher(
                         onEvent = onEvent,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
-                        onEventRuntime = onEventRuntime
+                        launchBlock = launchBlock
                     )
                 EventDispatching.Exclusive ->
                     ExclusiveEventDispatcher(
                         onEvent = onEvent,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
-                        onEventRuntime = onEventRuntime
+                        launchBlock = launchBlock
                     )
                 EventDispatching.Latest ->
                     LatestEventDispatcher(
                         onEvent = onEvent,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
-                        onEventRuntime = onEventRuntime
+                        launchBlock = launchBlock
                     )
             } as OnEventDispatcher<Event>
         }
