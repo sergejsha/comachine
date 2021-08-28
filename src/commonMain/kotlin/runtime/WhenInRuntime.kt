@@ -1,10 +1,13 @@
 package de.halfbit.comachine.runtime
 
-import de.halfbit.comachine.dsl.EventDispatching
 import de.halfbit.comachine.dsl.LaunchBlock
 import de.halfbit.comachine.dsl.LaunchBlockReceiver
+import de.halfbit.comachine.dsl.LaunchMode
+import de.halfbit.comachine.dsl.OnEvent
+import de.halfbit.comachine.dsl.OnEventBlock
 import de.halfbit.comachine.dsl.WhenIn
 import de.halfbit.comachine.runtime.dispatchers.ConcurrentEventDispatcher
+import de.halfbit.comachine.runtime.dispatchers.DefaultEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.ExclusiveEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.LatestEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.SequentialEventDispatcher
@@ -26,7 +29,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     private val emitStateFct: (State) -> Unit,
     private val emitMessage: EmitMessage,
 ) {
-    private val onEventDispatchers: MutableMap<KClass<out Event>, OnEventDispatcher<Event>> =
+    private val eventDispatchers: MutableMap<KClass<out Event>, EventDispatcher<Event>> =
         mutableMapOf()
 
     private val stateScope: CoroutineScope by lazy {
@@ -42,6 +45,16 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
             machineScope = machineScope,
             updateStateFct = ::updateState,
             transitionToFct = ::transitionTo,
+        )
+    }
+
+    private val eventRuntime: OnEventBlock<State, SubState> by lazy {
+        OnEventRuntime(
+            getStateFct = ::getState,
+            setStateFct = ::setState,
+            launchInStateFct = ::launchInState,
+            launchInMachineFct = ::launchInMachine,
+            transitionToFct = transitionToFct,
         )
     }
 
@@ -102,63 +115,63 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun createRuntimeOrNull(eventType: KClass<out Event>): OnEventDispatcher<Event>? =
-        whenIn.onEvent[eventType]?.let { onEvent ->
-            when (onEvent.eventDispatching) {
-                EventDispatching.Sequential ->
+    private fun createEventDispatcher(onEvent: OnEvent<State, SubState, *>) =
+        when (onEvent) {
+            is OnEvent.Default -> DefaultEventDispatcher(
+                eventRuntime = eventRuntime,
+                block = onEvent.block,
+            )
+            is OnEvent.Launchable -> when (onEvent.launchMode) {
+                LaunchMode.Sequential ->
                     SequentialEventDispatcher(
-                        onEvent = onEvent,
+                        block = onEvent.block,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
                         launchBlock = launchBlock
                     )
-                EventDispatching.Concurrent ->
+                LaunchMode.Concurrent ->
                     ConcurrentEventDispatcher(
-                        onEvent = onEvent,
+                        block = onEvent.block,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
                         launchBlock = launchBlock
                     )
-                EventDispatching.Exclusive ->
+                LaunchMode.Exclusive ->
                     ExclusiveEventDispatcher(
-                        onEvent = onEvent,
+                        block = onEvent.block,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
                         launchBlock = launchBlock
                     )
-                EventDispatching.Latest ->
+                LaunchMode.Latest ->
                     LatestEventDispatcher(
-                        onEvent = onEvent,
+                        block = onEvent.block,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
                         launchBlock = launchBlock
                     )
-            } as OnEventDispatcher<Event>
-        }
+            }
+        } as EventDispatcher<Event>
+
+    private fun getEventRuntimeOrNull(eventType: KClass<out Event>) =
+        eventDispatchers[eventType]
+            ?: whenIn.onEvent[eventType]?.let { onEvent ->
+                createEventDispatcher(onEvent)
+                    .also { eventDispatchers[eventType] = it }
+            }
 
     fun onEnter() {
         whenIn.onEnter?.let { onEnter ->
-            val onEnterRuntime = OnEnterRuntime(
-                getStateFct = ::getState,
-                setStateFct = ::setState,
-                launchInStateFct = ::launchInState,
-                launchInMachineFct = ::launchInMachine,
-                transitionToFct = transitionToFct,
-            )
-            onEnter.block(onEnterRuntime)
+            onEnter.block(eventRuntime)
         }
     }
 
     fun onEventReceived(event: Event) {
-        val eventType = event::class
-        val eventRuntime = onEventDispatchers[eventType]
-            ?: createRuntimeOrNull(eventType)
-                ?.also { onEventDispatchers[eventType] = it }
-        eventRuntime?.onEventReceived(event)
+        getEventRuntimeOrNull(event::class)?.onEventReceived(event)
     }
 
     fun onEventCompleted(event: Event) {
-        onEventDispatchers[event::class]?.onEventCompleted(event)
+        eventDispatchers[event::class]?.onEventCompleted(event)
     }
 
     fun onExit() {
@@ -173,9 +186,9 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 }
 
-internal interface OnEventDispatcher<SubEvent : Any> {
+internal interface EventDispatcher<SubEvent : Any> {
     fun onEventReceived(event: SubEvent)
-    fun onEventCompleted(event: SubEvent)
+    fun onEventCompleted(event: SubEvent) {}
 }
 
 private class LaunchBlockRuntime<State : Any, SubState : State>(

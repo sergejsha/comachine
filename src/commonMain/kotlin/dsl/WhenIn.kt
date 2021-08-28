@@ -14,7 +14,6 @@ internal data class WhenIn<State : Any, SubState : State>(
 class WhenInBlock<State : Any, SubState : State, Event : Any>
 @PublishedApi
 internal constructor(
-    @PublishedApi
     internal val whenIn: WhenIn<State, SubState>
 ) {
 
@@ -22,31 +21,37 @@ internal constructor(
     inline fun <reified SubEvent : Event> onSequential(
         noinline block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit
     ) {
-        addUnique(OnEvent(SubEvent::class, EventDispatching.Sequential, block))
+        addUnique(OnEvent.Launchable(SubEvent::class, LaunchMode.Sequential, block))
     }
 
     /** A new event is executed concurrently to already processed events. */
     inline fun <reified SubEvent : Event> onConcurrent(
         noinline block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit
     ) {
-        addUnique(OnEvent(SubEvent::class, EventDispatching.Concurrent, block))
+        addUnique(OnEvent.Launchable(SubEvent::class, LaunchMode.Concurrent, block))
     }
 
     /** A new event replaces the current event, if such. Current event is cancelled. */
     inline fun <reified SubEvent : Event> onLatest(
         noinline block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit
     ) {
-        addUnique(OnEvent(SubEvent::class, EventDispatching.Latest, block))
+        addUnique(OnEvent.Launchable(SubEvent::class, LaunchMode.Latest, block))
     }
 
     /** A new event is ignored if there is the current event in processing. */
     inline fun <reified SubEvent : Event> onExclusive(
         noinline block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit
     ) {
-        addUnique(OnEvent(SubEvent::class, EventDispatching.Exclusive, block))
+        addUnique(OnEvent.Launchable(SubEvent::class, LaunchMode.Exclusive, block))
     }
 
-    fun onEnter(block: OnEnterBlock<State, SubState>.() -> Unit) {
+    inline fun <reified SubEvent : Event> on(
+        noinline block: OnEventBlock<State, SubState>.(SubEvent) -> Unit,
+    ) {
+        addUnique(OnEvent.Default(SubEvent::class, block))
+    }
+
+    fun onEnter(block: OnEventBlock<State, SubState>.() -> Unit) {
         whenIn.onEnter = OnEnter(block)
     }
 

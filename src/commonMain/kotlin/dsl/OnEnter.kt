@@ -4,16 +4,8 @@ import kotlinx.coroutines.Job
 
 @PublishedApi
 internal data class OnEnter<State : Any, SubState : State>(
-    val block: OnEnterBlock<State, SubState>.() -> Unit,
+    val block: OnEventBlock<State, SubState>.() -> Unit,
 )
-
-@ComachineDsl
-interface OnEnterBlock<State : Any, SubState : State> {
-    var state: SubState
-    fun transitionTo(state: State): Nothing
-    fun launch(block: LaunchBlockReceiver<State, SubState>): Job
-    fun launchInMachine(block: LaunchBlockReceiver<State, SubState>): Job
-}
 
 @ComachineDsl
 interface LaunchBlock<State : Any, SubState : State> {
