@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ChainedTransitionOnEnterTest {
+class OnEnterChainedTransitionTest {
 
     sealed interface State {
         object Zero : State
@@ -45,10 +45,10 @@ class ChainedTransitionOnEnterTest {
         }
 
         executeBlockingTest {
-            val states = mutableListOf<String>()
+            val states = mutableListOf<State>()
             launch {
                 machine.state.collect {
-                    states += it::class.simpleName.toString()
+                    states += it
                 }
             }
 
@@ -58,8 +58,17 @@ class ChainedTransitionOnEnterTest {
             assertEquals(
                 states,
                 listOf(
-                    "Zero", "One", "Two", "Three", "Four", "Five",
-                    "Six", "Seven", "Eight", "Nine", "Ten"
+                    State.Zero,
+                    State.One,
+                    State.Two,
+                    State.Three,
+                    State.Four,
+                    State.Five,
+                    State.Six,
+                    State.Seven,
+                    State.Eight,
+                    State.Nine,
+                    State.Ten,
                 )
             )
         }

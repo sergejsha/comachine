@@ -29,8 +29,9 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     private val emitStateFct: (State) -> Unit,
     private val emitMessage: EmitMessage,
 ) {
-    private val eventDispatchers: MutableMap<KClass<out Event>, EventDispatcher<Event>> =
-        mutableMapOf()
+
+    private val eventDispatchers =
+        mutableMapOf<KClass<out Event>, EventDispatcher<Event>>()
 
     private val stateScope: CoroutineScope by lazy {
         CoroutineScope(
@@ -73,6 +74,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     private fun getState(): SubState = state
     private fun setState(newState: SubState) {
         state = newState
+        emitStateFct(newState)
     }
 
     private fun updateState(newState: SubState) {
@@ -153,7 +155,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
             }
         } as EventDispatcher<Event>
 
-    private fun getEventRuntimeOrNull(eventType: KClass<out Event>) =
+    private fun getEventDispatcherOrNull(eventType: KClass<out Event>) =
         eventDispatchers[eventType]
             ?: whenIn.onEvent[eventType]?.let { onEvent ->
                 createEventDispatcher(onEvent)
@@ -171,9 +173,9 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 
     fun onEventReceived(event: Event) {
-        getEventRuntimeOrNull(event::class)?.let { eventRuntime ->
+        getEventDispatcherOrNull(event::class)?.let { eventDispatcher ->
             try {
-                eventRuntime.onEventReceived(event)
+                eventDispatcher.onEventReceived(event)
             } catch (err: CancellationException) {
                 stateScope.cancel(err)
             }
@@ -181,9 +183,9 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 
     fun onEventCompleted(event: Event) {
-        eventDispatchers[event::class]?.let { eventRuntime ->
+        eventDispatchers[event::class]?.let { eventDispatcher ->
             try {
-                eventRuntime.onEventCompleted(event)
+                eventDispatcher.onEventCompleted(event)
             } catch (err: CancellationException) {
                 stateScope.cancel(err)
             }
@@ -198,7 +200,9 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
             )
             onExit.block(onExitRuntime)
         }
-        stateScope.cancel()
+        if (stateScope.isActive) {
+            stateScope.cancel()
+        }
     }
 }
 
