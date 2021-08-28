@@ -18,7 +18,6 @@ internal sealed interface Message {
     data class OnEventReceived(val event: Any) : Message
     data class OnEventCompleted(val event: Any) : Message
     data class OnCallback(val callback: suspend () -> Unit) : Message
-    data class OnEnterState(val state: Any) : Message
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -30,6 +29,7 @@ internal class ComachineRuntime<State : Any, Event : Any>(
 ) {
     private val messageFlow = MutableSharedFlow<Message>()
     private var whereInRuntime: WhenInRuntime<State, out State, Event>? = null
+    private var pendingEntryState: State? = null
 
     suspend fun send(event: Event) {
         messageFlow.emit(Message.OnEventReceived(event))
@@ -47,7 +47,13 @@ internal class ComachineRuntime<State : Any, Event : Any>(
                     is Message.OnEventReceived -> onEventReceived(it.event as Event)
                     is Message.OnEventCompleted -> onEventCompleted(it.event as Event)
                     is Message.OnCallback -> it.callback()
-                    is Message.OnEnterState -> onEnterState(it.state as State)
+                }
+
+                var state = pendingEntryState
+                while (state != null) {
+                    pendingEntryState = null
+                    onEnterState(state)
+                    state = pendingEntryState
                 }
             }
     }
@@ -78,7 +84,10 @@ internal class ComachineRuntime<State : Any, Event : Any>(
 
     private fun transitionTo(state: State) {
         whereInRuntime?.onExit()
-        onEnterState(state)
+        check(pendingEntryState == null) {
+            reportError("Pending entry state is already set.")
+        }
+        pendingEntryState = state
     }
 
     private fun onEnterState(state: State) {
