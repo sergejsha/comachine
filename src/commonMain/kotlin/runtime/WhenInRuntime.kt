@@ -162,7 +162,11 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
 
     fun onEnter() {
         whenIn.onEnter?.let { onEnter ->
-            onEnter.block(eventRuntime)
+            try {
+                onEnter.block(eventRuntime)
+            } catch (err: CancellationException) {
+                stateScope.cancel(err)
+            }
         }
     }
 

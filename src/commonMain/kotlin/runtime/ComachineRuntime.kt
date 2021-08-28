@@ -18,6 +18,7 @@ internal sealed interface Message {
     data class OnEventReceived(val event: Any) : Message
     data class OnEventCompleted(val event: Any) : Message
     data class OnCallback(val callback: suspend () -> Unit) : Message
+    data class OnEnterState(val state: Any) : Message
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -40,12 +41,13 @@ internal class ComachineRuntime<State : Any, Event : Any>(
             .collect {
                 when (it) {
                     is Message.OnStartedWith -> {
-                        transitionTo(it.state as State)
+                        onEnterState(it.state as State)
                         onStarted?.complete(Unit)
                     }
                     is Message.OnEventReceived -> onEventReceived(it.event as Event)
                     is Message.OnEventCompleted -> onEventCompleted(it.event as Event)
                     is Message.OnCallback -> it.callback()
+                    is Message.OnEnterState -> onEnterState(it.state as State)
                 }
             }
     }
@@ -76,6 +78,10 @@ internal class ComachineRuntime<State : Any, Event : Any>(
 
     private fun transitionTo(state: State) {
         whereInRuntime?.onExit()
+        onEnterState(state)
+    }
+
+    private fun onEnterState(state: State) {
         emitState(state)
         whereInRuntime = createWhereIn(state)
         whereInRuntime?.onEnter()
@@ -83,8 +89,10 @@ internal class ComachineRuntime<State : Any, Event : Any>(
 
     private fun emitState(state: State) {
         check(stateFlow.tryEmit(state)) {
-            "StateFlow suspends although it never should." +
-                " Please report this bug to https://github.com/beworker/comachine/"
+            reportError("StateFlow suspends although it never should.")
         }
     }
 }
+
+internal fun reportError(message: String): String =
+    "$message Please report this bug to https://github.com/beworker/comachine/"

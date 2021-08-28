@@ -1,6 +1,7 @@
 package de.halfbit.comachine.tests.utils
 
 import de.halfbit.comachine.Comachine
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -9,26 +10,30 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration
 
 suspend inline fun <reified State : Any> Comachine<*, *>.await(
-    timeout: Duration = Duration.milliseconds(3000)
+    timeout: Duration = Duration.milliseconds(5000)
 ) {
     await<State>(timeout) { this::class == State::class }
 }
 
 suspend inline fun <reified State : Any> Comachine<*, *>.await(
-    timeout: Duration = Duration.milliseconds(10000),
+    timeout: Duration = Duration.milliseconds(3000),
     crossinline block: State.() -> Boolean
 ) {
-    runCatching {
+    try {
         coroutineScope {
             launch {
                 delay(timeout)
                 error("timeout")
             }
+            println("*** collecting states")
             state.collect {
+                println("*** state observed: $it")
                 if (it is State && block(it)) {
                     cancel("state detected")
                 }
             }
         }
+    } catch (err: CancellationException) {
+        // all good
     }
 }
