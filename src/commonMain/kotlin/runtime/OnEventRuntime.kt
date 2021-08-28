@@ -2,8 +2,8 @@ package de.halfbit.comachine.runtime
 
 import de.halfbit.comachine.dsl.LaunchBlockReceiver
 import de.halfbit.comachine.dsl.OnEventBlock
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlin.coroutines.cancellation.CancellationException
 
 internal class OnEventRuntime<State : Any, SubState : State>(
     private val getStateFct: () -> SubState,
@@ -21,7 +21,7 @@ internal class OnEventRuntime<State : Any, SubState : State>(
 
     override fun transitionTo(state: State): Nothing {
         transitionToFct(state)
-        throw CancellationException()
+        throw TransitionPerformedException()
     }
 
     override fun launch(block: LaunchBlockReceiver<State, SubState>) =

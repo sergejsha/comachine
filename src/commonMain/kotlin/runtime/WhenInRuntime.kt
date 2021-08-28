@@ -8,9 +8,10 @@ import de.halfbit.comachine.dsl.OnEventBlock
 import de.halfbit.comachine.dsl.WhenIn
 import de.halfbit.comachine.runtime.dispatchers.ConcurrentEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.DefaultEventDispatcher
-import de.halfbit.comachine.runtime.dispatchers.SingleEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.LatestEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.SequentialEventDispatcher
+import de.halfbit.comachine.runtime.dispatchers.SingleEventDispatcher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -18,7 +19,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlin.coroutines.cancellation.CancellationException
 import kotlin.reflect.KClass
 
 internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
@@ -167,11 +167,23 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 
     fun onEventReceived(event: Event) {
-        getEventRuntimeOrNull(event::class)?.onEventReceived(event)
+        getEventRuntimeOrNull(event::class)?.let { eventRuntime ->
+            try {
+                eventRuntime.onEventReceived(event)
+            } catch (err: CancellationException) {
+                stateScope.cancel(err)
+            }
+        }
     }
 
     fun onEventCompleted(event: Event) {
-        eventDispatchers[event::class]?.onEventCompleted(event)
+        eventDispatchers[event::class]?.let { eventRuntime ->
+            try {
+                eventRuntime.onEventCompleted(event)
+            } catch (err: CancellationException) {
+                stateScope.cancel(err)
+            }
+        }
     }
 
     fun onExit() {
@@ -207,7 +219,7 @@ private class LaunchBlockRuntime<State : Any, SubState : State>(
 
     override suspend fun transitionTo(block: SubState.() -> State): Nothing {
         transitionToFct(block)
-        throw CancellationException()
+        throw TransitionPerformedException()
     }
 
     override fun launch(block: LaunchBlockReceiver<State, SubState>): Job =
@@ -216,3 +228,5 @@ private class LaunchBlockRuntime<State : Any, SubState : State>(
     override fun launchInMachine(block: LaunchBlockReceiver<State, SubState>): Job =
         machineScope.launch { block(this@LaunchBlockRuntime) }
 }
+
+internal class TransitionPerformedException : CancellationException("transition performed")

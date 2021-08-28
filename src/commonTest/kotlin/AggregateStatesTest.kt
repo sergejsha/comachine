@@ -3,9 +3,7 @@ package de.halfbit.comachine.tests
 import de.halfbit.comachine.comachine
 import de.halfbit.comachine.startInScope
 import de.halfbit.comachine.tests.utils.await
-import de.halfbit.comachine.tests.utils.executeBlocking
-import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.delay
+import de.halfbit.comachine.tests.utils.executeBlockingTest
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlin.test.Test
@@ -31,40 +29,26 @@ class AggregateStatesTest {
             startWith = State.Solid()
         ) {
             whenIn<State.Solid> {
-                onSingle<Event.OnHeat> {
-                    state.update { copy(progress = "melting...") }
-                    delay(100)
-                    state.update { copy(progress = "melted") }
-                    transitionTo { State.Liquid() }
+                on<Event.OnHeat> {
+                    transitionTo(State.Liquid())
                 }
             }
-
             whenIn<State.Liquid> {
-                onSingle<Event.OnHeat> {
-                    state.update { copy(progress = "vaporizing...") }
-                    delay(100)
-                    state.update { copy(progress = "vaporized") }
-                    transitionTo { State.Gas() }
+                on<Event.OnHeat> {
+                    transitionTo(State.Gas())
                 }
-                onSingle<Event.OnCold> {
-                    state.update { copy(progress = "freezing...") }
-                    delay(100)
-                    state.update { copy(progress = "frozen") }
-                    transitionTo { State.Solid() }
+                on<Event.OnCold> {
+                    transitionTo(State.Solid())
                 }
             }
-
             whenIn<State.Gas> {
-                onSingle<Event.OnCold> {
-                    state.update { copy(progress = "condensing...") }
-                    delay(100)
-                    state.update { copy(progress = "condensed") }
-                    transitionTo { State.Liquid() }
+                on<Event.OnCold> {
+                    transitionTo(State.Liquid())
                 }
             }
         }
 
-        executeBlocking {
+        executeBlockingTest {
             launch {
                 comachine.state.collect {
                     println("------ $it")
@@ -87,8 +71,6 @@ class AggregateStatesTest {
             println("OnCold")
             comachine.send(Event.OnCold)
             comachine.await<State.Solid>()
-
-            coroutineContext.cancelChildren()
         }
     }
 }
