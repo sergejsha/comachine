@@ -23,7 +23,7 @@ class AggregateStatesTest {
     }
 
     @Test
-    fun test_Comachine() {
+    fun test() {
 
         val comachine = comachine<State, Event>(
             startWith = State.Solid()
