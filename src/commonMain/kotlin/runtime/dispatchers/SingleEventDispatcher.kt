@@ -9,7 +9,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlin.coroutines.coroutineContext
 
-internal class ExclusiveEventDispatcher<State : Any, SubState : State, SubEvent : Any>(
+internal class SingleEventDispatcher<State : Any, SubState : State, SubEvent : Any>(
     private val block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit,
     private val launchInStateFct: LaunchInState,
     private val emitMessage: EmitMessage,

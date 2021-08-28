@@ -31,7 +31,7 @@ class AggregateStatesTest {
             startWith = State.Solid()
         ) {
             whenIn<State.Solid> {
-                onExclusive<Event.OnHeat> {
+                onSingle<Event.OnHeat> {
                     state.update { copy(progress = "melting...") }
                     delay(100)
                     state.update { copy(progress = "melted") }
@@ -40,13 +40,13 @@ class AggregateStatesTest {
             }
 
             whenIn<State.Liquid> {
-                onExclusive<Event.OnHeat> {
+                onSingle<Event.OnHeat> {
                     state.update { copy(progress = "vaporizing...") }
                     delay(100)
                     state.update { copy(progress = "vaporized") }
                     transitionTo { State.Gas() }
                 }
-                onExclusive<Event.OnCold> {
+                onSingle<Event.OnCold> {
                     state.update { copy(progress = "freezing...") }
                     delay(100)
                     state.update { copy(progress = "frozen") }
@@ -55,7 +55,7 @@ class AggregateStatesTest {
             }
 
             whenIn<State.Gas> {
-                onExclusive<Event.OnCold> {
+                onSingle<Event.OnCold> {
                     state.update { copy(progress = "condensing...") }
                     delay(100)
                     state.update { copy(progress = "condensed") }

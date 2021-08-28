@@ -8,7 +8,7 @@ import de.halfbit.comachine.dsl.OnEventBlock
 import de.halfbit.comachine.dsl.WhenIn
 import de.halfbit.comachine.runtime.dispatchers.ConcurrentEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.DefaultEventDispatcher
-import de.halfbit.comachine.runtime.dispatchers.ExclusiveEventDispatcher
+import de.halfbit.comachine.runtime.dispatchers.SingleEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.LatestEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.SequentialEventDispatcher
 import kotlinx.coroutines.CompletableDeferred
@@ -136,8 +136,8 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
                         emitMessage = emitMessage,
                         launchBlock = launchBlock
                     )
-                LaunchMode.Exclusive ->
-                    ExclusiveEventDispatcher(
+                LaunchMode.Single ->
+                    SingleEventDispatcher(
                         block = onEvent.block,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,

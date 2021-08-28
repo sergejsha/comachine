@@ -21,7 +21,7 @@ internal sealed interface OnEvent<State : Any, SubState : State, SubEvent : Any>
 
 @PublishedApi
 internal enum class LaunchMode {
-    Sequential, Concurrent, Latest, Exclusive
+    Sequential, Concurrent, Latest, Single
 }
 
 @ComachineDsl

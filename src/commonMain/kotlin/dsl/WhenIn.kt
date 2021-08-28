@@ -38,11 +38,11 @@ internal constructor(
         addUnique(OnEvent.Launchable(SubEvent::class, LaunchMode.Latest, block))
     }
 
-    /** A new event is ignored if there is the current event in processing. */
-    inline fun <reified SubEvent : Event> onExclusive(
+    /** A new event is ignored if there is an event in processing. */
+    inline fun <reified SubEvent : Event> onSingle(
         noinline block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit
     ) {
-        addUnique(OnEvent.Launchable(SubEvent::class, LaunchMode.Exclusive, block))
+        addUnique(OnEvent.Launchable(SubEvent::class, LaunchMode.Single, block))
     }
 
     inline fun <reified SubEvent : Event> on(
