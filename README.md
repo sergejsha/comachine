@@ -3,6 +3,10 @@ Finite-State Machine for Kotlin coroutines (multiplatform).
 
 Work in progress. Some changes to API are possible.
 
+# Examples
+
+[AggregateStatesTest.kt](https://github.com/beworker/comachine/blob/7913cd58cf05eb015da263a00fa5ccf9671bc7e0/src/commonTest/kotlin/AggregateStatesTest.kt)
+
 # Binaries
 ```groovy
 // in project build file
