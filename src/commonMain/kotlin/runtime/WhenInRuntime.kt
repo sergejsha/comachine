@@ -34,6 +34,9 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     private val eventDispatchers =
         mutableMapOf<KClass<out Event>, EventDispatcher<Event>>()
 
+    private val extras =
+        lazy { mutableMapOf<KClass<*>, Any?>() }
+
     private val stateScope: CoroutineScope by lazy {
         CoroutineScope(
             SupervisorJob(machineScope.coroutineContext[Job])
@@ -54,6 +57,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
         OnEventBlock(
             getStateFct = ::getState,
             setStateFct = ::setState,
+            extras = extras,
             launchInStateFct = ::launchInState,
             launchInMachineFct = ::launchInMachine,
             transitionToFct = transitionToFct,
