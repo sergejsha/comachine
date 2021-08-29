@@ -25,9 +25,7 @@ suspend inline fun <reified State : Any> Comachine<*, *>.await(
                 delay(timeout)
                 error("timeout")
             }
-            println("*** collecting states")
             state.collect {
-                println("*** state observed: $it")
                 if (it is State && block(it)) {
                     cancel("state detected")
                 }
