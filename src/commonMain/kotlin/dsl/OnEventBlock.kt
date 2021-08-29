@@ -6,7 +6,6 @@ import kotlin.reflect.KClass
 
 @ComachineDsl
 class OnEventBlock<State : Any, SubState : State>
-@PublishedApi
 internal constructor(
     private val getStateFct: () -> SubState,
     private val setStateFct: (SubState) -> Unit,

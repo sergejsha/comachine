@@ -7,7 +7,6 @@ import kotlinx.coroutines.launch
 
 @ComachineDsl
 class LaunchBlock<State : Any, SubState : State>
-@PublishedApi
 internal constructor(
     private val getStateFct: () -> SubState,
     private val stateScope: CoroutineScope,

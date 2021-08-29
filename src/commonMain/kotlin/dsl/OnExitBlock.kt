@@ -7,7 +7,6 @@ private typealias LaunchInMachine = (suspend () -> Unit) -> Job
 
 @ComachineDsl
 class OnExitBlock<SubState : Any>
-@PublishedApi
 internal constructor(
     private val getStateFct: () -> SubState,
     @PublishedApi internal val extras: Lazy<MutableMap<KClass<*>, Any?>>,
