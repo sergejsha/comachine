@@ -207,6 +207,8 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 }
 
+internal typealias LaunchInState = (suspend () -> Unit) -> Job
+
 internal interface EventDispatcher<SubEvent : Any> {
     fun onEventReceived(event: SubEvent)
     fun onEventCompleted(event: SubEvent) {}

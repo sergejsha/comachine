@@ -3,14 +3,11 @@ package de.halfbit.comachine.runtime
 import de.halfbit.comachine.dsl.WhenIn
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onSubscription
 import kotlin.reflect.KClass
 
-internal typealias LaunchInState = (suspend () -> Unit) -> Job
-internal typealias LaunchInMachine = (suspend () -> Unit) -> Job
 internal typealias EmitMessage = suspend (Message) -> Unit
 
 internal sealed interface Message {

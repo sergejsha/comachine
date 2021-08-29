@@ -1,6 +1,6 @@
 package de.halfbit.comachine
 
-import de.halfbit.comachine.dsl.ComachineBuilder
+import de.halfbit.comachine.dsl.ComachineBlock
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -15,9 +15,9 @@ interface Comachine<State : Any, Event : Any> {
 
 fun <State : Any, Event : Any> comachine(
     startWith: State,
-    block: ComachineBuilder<State, Event>.() -> Unit
+    block: ComachineBlock<State, Event>.() -> Unit
 ): Comachine<State, Event> =
-    ComachineBuilder<State, Event>(startWith).also(block).build()
+    ComachineBlock<State, Event>(startWith).also(block).build()
 
 /**
  * Launches the machine in the given scope and suspends until the initial state is

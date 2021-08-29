@@ -18,7 +18,7 @@ private typealias WhenInsMap<SuperState, State> =
     MutableMap<KClass<out State>, WhenIn<SuperState, State>>
 
 @ComachineDsl
-class ComachineBuilder<State : Any, Event : Any>
+class ComachineBlock<State : Any, Event : Any>
 internal constructor(
     @PublishedApi internal val startWith: State,
     @PublishedApi internal val whenIns: WhenInsMap<State, out State> = mutableMapOf(),

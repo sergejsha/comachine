@@ -1,6 +1,8 @@
 package de.halfbit.comachine.dsl
 
-import de.halfbit.comachine.runtime.LaunchInMachine
+import kotlinx.coroutines.Job
+
+private typealias LaunchInMachine = (suspend () -> Unit) -> Job
 
 @ComachineDsl
 class OnExitBlock<SubState : Any>
