@@ -52,11 +52,11 @@ internal constructor(
     }
 
     fun onEnter(block: OnEventBlock<State, SubState>.() -> Unit) {
-        whenIn.onEnter = OnEnter(block)
+        whenIn.onEnter = OnEnter(block, whenIn.onEnter)
     }
 
     fun onExit(block: OnExitBlock<SubState>.() -> Unit) {
-        whenIn.onExit = OnExit(block)
+        whenIn.onExit = OnExit(block, whenIn.onExit)
     }
 
     @PublishedApi

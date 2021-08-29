@@ -167,9 +167,13 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
             }
 
     fun onEnter() {
-        whenIn.onEnter?.let { onEnter ->
+        var onEnter = whenIn.onEnter
+        if (onEnter != null) {
             try {
-                onEnter.block(eventRuntime)
+                while (onEnter != null) {
+                    onEnter.block.invoke(eventRuntime)
+                    onEnter = onEnter.next
+                }
             } catch (err: CancellationException) {
                 stateScope.cancel(err)
             }
@@ -197,13 +201,21 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 
     fun onExit() {
-        whenIn.onExit?.let { onExit ->
-            val onExitRuntime = OnExitBlock(
+        var onExit = whenIn.onExit
+        if (onExit != null) {
+            val onExitBlock = OnExitBlock(
                 getStateFct = ::getState,
                 extras = extras,
                 launchInMachineFct = ::launchInMachine,
             )
-            onExit.block(onExitRuntime)
+            try {
+                while (onExit != null) {
+                    onExit.block.invoke(onExitBlock)
+                    onExit = onExit.next
+                }
+            } catch (err: CancellationException) {
+                stateScope.cancel(err)
+            }
         }
         if (stateScope.isActive) {
             stateScope.cancel()
