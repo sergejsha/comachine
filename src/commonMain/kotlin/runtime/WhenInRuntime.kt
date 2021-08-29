@@ -201,6 +201,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
         whenIn.onExit?.let { onExit ->
             val onExitRuntime = OnExitBlock(
                 getStateFct = ::getState,
+                extras = extras,
                 launchInMachineFct = ::launchInMachine,
             )
             onExit.block(onExitRuntime)
