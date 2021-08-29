@@ -19,6 +19,12 @@ fun <State : Any, Event : Any> comachine(
 ): Comachine<State, Event> =
     ComachineBlock<State, Event>(startWith).also(block).build()
 
+fun <State : Any, Event : Any> mutableComachine(
+    startWith: State,
+    block: ComachineBlock<State, Event>.() -> Unit = {}
+): MutableComachine<State, Event> =
+    ComachineBlock<State, Event>(startWith).also(block).build()
+
 /**
  * Launches the machine in the given scope and suspends until the initial state is
  * emitted. The machine is fully prepared and usable after this method exists.

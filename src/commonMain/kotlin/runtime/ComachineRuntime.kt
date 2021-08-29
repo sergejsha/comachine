@@ -17,7 +17,6 @@ internal sealed interface Message {
     data class OnCallback(val callback: suspend () -> Unit) : Message
 }
 
-@Suppress("UNCHECKED_CAST")
 internal class ComachineRuntime<State : Any, Event : Any>(
     private var state: State,
     private val machineScope: CoroutineScope,

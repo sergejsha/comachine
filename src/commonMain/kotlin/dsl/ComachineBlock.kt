@@ -1,6 +1,6 @@
 package de.halfbit.comachine.dsl
 
-import de.halfbit.comachine.Comachine
+import de.halfbit.comachine.MutableComachine
 import de.halfbit.comachine.runtime.ComachineRuntime
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 @DslMarker
 annotation class ComachineDsl
 
-private typealias WhenInsMap<SuperState, State> =
+internal typealias WhenInsMap<SuperState, State> =
     MutableMap<KClass<out State>, WhenIn<SuperState, State>>
 
 @ComachineDsl
@@ -32,7 +32,7 @@ internal constructor(
                 .also { block(WhenInBlock(it)) }
     }
 
-    fun build(): Comachine<State, Event> =
+    fun build(): MutableComachine<State, Event> =
         DefaultComachine(
             startWith = startWith,
             whenIns = whenIns,
@@ -41,18 +41,25 @@ internal constructor(
 
 private class DefaultComachine<State : Any, Event : Any>(
     private val startWith: State,
-    private val whenIns: WhenInsMap<State, out State> = mutableMapOf(),
+    private val whenIns: WhenInsMap<State, out State>,
     stateExtraBufferCapacity: Int = 16,
-) : Comachine<State, Event> {
+) : MutableComachine<State, Event> {
 
     private var comachineRuntime: ComachineRuntime<State, Event>? = null
     private val stateFlow = MutableSharedFlow<State>(
         replay = 1,
         extraBufferCapacity = stateExtraBufferCapacity,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
     override val state: Flow<State> get() = stateFlow
+
+    override fun registerDelegate(block: ComachineDelegateBlock<State, Event>.() -> Unit) {
+        check(comachineRuntime == null) {
+            "Register can only be called when event loop() is not stated"
+        }
+        ComachineDelegateBlock<State, Event>(whenIns).also(block)
+    }
 
     override suspend fun send(event: Event) {
         checkNotNull(comachineRuntime) {

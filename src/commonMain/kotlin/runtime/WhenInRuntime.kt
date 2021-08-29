@@ -121,7 +121,6 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
         called.await()
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun createEventDispatcher(onEvent: OnEvent<State, SubState, *>) =
         when (onEvent) {
             is OnEvent.Default -> DefaultEventDispatcher(
