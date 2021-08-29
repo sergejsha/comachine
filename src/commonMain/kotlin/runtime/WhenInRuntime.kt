@@ -5,6 +5,7 @@ import de.halfbit.comachine.dsl.LaunchBlockReceiver
 import de.halfbit.comachine.dsl.LaunchMode
 import de.halfbit.comachine.dsl.OnEvent
 import de.halfbit.comachine.dsl.OnEventBlock
+import de.halfbit.comachine.dsl.OnExitBlock
 import de.halfbit.comachine.dsl.WhenIn
 import de.halfbit.comachine.runtime.dispatchers.ConcurrentEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.DefaultEventDispatcher
@@ -40,7 +41,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 
     private val launchBlock: LaunchBlock<State, SubState> by lazy {
-        LaunchBlockRuntime(
+        LaunchBlock(
             getStateFct = ::getState,
             stateScope = stateScope,
             machineScope = machineScope,
@@ -127,30 +128,30 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
                 LaunchMode.Sequential ->
                     SequentialEventDispatcher(
                         block = onEvent.block,
+                        launchBlock = launchBlock,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
-                        launchBlock = launchBlock
                     )
                 LaunchMode.Concurrent ->
                     ConcurrentEventDispatcher(
                         block = onEvent.block,
+                        launchBlock = launchBlock,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
-                        launchBlock = launchBlock
                     )
                 LaunchMode.Single ->
                     SingleEventDispatcher(
                         block = onEvent.block,
+                        launchBlock = launchBlock,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
-                        launchBlock = launchBlock
                     )
                 LaunchMode.Latest ->
                     LatestEventDispatcher(
                         block = onEvent.block,
+                        launchBlock = launchBlock,
                         launchInStateFct = ::launchInState,
                         emitMessage = emitMessage,
-                        launchBlock = launchBlock
                     )
             }
         } as EventDispatcher<Event>
@@ -194,7 +195,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
 
     fun onExit() {
         whenIn.onExit?.let { onExit ->
-            val onExitRuntime = OnExitRuntime(
+            val onExitRuntime = OnExitBlock(
                 getStateFct = ::getState,
                 launchInMachineFct = ::launchInMachine,
             )
@@ -209,32 +210,6 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
 internal interface EventDispatcher<SubEvent : Any> {
     fun onEventReceived(event: SubEvent)
     fun onEventCompleted(event: SubEvent) {}
-}
-
-private class LaunchBlockRuntime<State : Any, SubState : State>(
-    private val getStateFct: () -> SubState,
-    private val stateScope: CoroutineScope,
-    private val machineScope: CoroutineScope,
-    private val updateStateFct: suspend ((SubState) -> SubState) -> Unit,
-    private val transitionToFct: suspend ((SubState) -> State) -> Unit,
-) : LaunchBlock<State, SubState> {
-
-    override val state: SubState get() = getStateFct()
-
-    override suspend fun SubState.update(block: SubState.() -> SubState) {
-        updateStateFct(block)
-    }
-
-    override suspend fun transitionTo(block: SubState.() -> State): Nothing {
-        transitionToFct(block)
-        throw TransitionPerformedException()
-    }
-
-    override fun launch(block: LaunchBlockReceiver<State, SubState>): Job =
-        stateScope.launch { block(this@LaunchBlockRuntime) }
-
-    override fun launchInMachine(block: LaunchBlockReceiver<State, SubState>): Job =
-        machineScope.launch { block(this@LaunchBlockRuntime) }
 }
 
 internal class TransitionPerformedException : CancellationException("transition performed")

@@ -48,7 +48,6 @@ internal class ComachineRuntime<State : Any, Event : Any>(
                     is Message.OnEventCompleted -> onEventCompleted(it.event as Event)
                     is Message.OnCallback -> it.callback()
                 }
-
                 var state = pendingEntryState
                 while (state != null) {
                     pendingEntryState = null

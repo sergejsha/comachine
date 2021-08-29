@@ -11,9 +11,9 @@ import kotlin.coroutines.coroutineContext
 
 internal class SingleEventDispatcher<State : Any, SubState : State, SubEvent : Any>(
     private val block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit,
+    private val launchBlock: LaunchBlock<State, SubState>,
     private val launchInStateFct: LaunchInState,
     private val emitMessage: EmitMessage,
-    private val launchBlock: LaunchBlock<State, SubState>,
 ) : EventDispatcher<SubEvent> {
 
     private var currentEventJob: Job? = null
