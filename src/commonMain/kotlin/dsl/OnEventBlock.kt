@@ -30,6 +30,14 @@ internal constructor(
         extras.value[T::class] = value
     }
 
+    inline fun <reified T> removeExtra() {
+        extras.value.remove(T::class)
+    }
+
+    inline fun <reified T> hasExtra(): Boolean {
+        return extras.value.containsKey(T::class)
+    }
+
     fun transitionTo(state: State): Nothing {
         transitionToFct(state)
         throw TransitionPerformedException()

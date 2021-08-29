@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlin.test.Test
 
-class ExtrasSetAndGetInSameStateTest {
+class ExtrasCanBeRemovedTest {
 
-    data class State(val value: String = "")
+    data class State(val value: String? = "initial")
 
     @Test
     fun test() {
@@ -20,10 +20,11 @@ class ExtrasSetAndGetInSameStateTest {
         ) {
             whenIn<State> {
                 onEnter {
-                    setExtra("custom value")
+                    setExtra<String?>("custom value")
                 }
                 on<Unit> {
-                    val value = getExtra<String>()
+                    removeExtra<String?>()
+                    val value = getExtra<String?>()
                     state = state.copy(value = value)
                 }
             }
@@ -38,7 +39,7 @@ class ExtrasSetAndGetInSameStateTest {
 
             machine.startInScope(this)
             machine.send(Unit)
-            machine.await<State> { value == "custom value" }
+            machine.await<State> { value == null }
         }
     }
 }
