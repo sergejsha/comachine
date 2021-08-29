@@ -50,7 +50,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 
     private val eventRuntime: OnEventBlock<State, SubState> by lazy {
-        OnEventRuntime(
+        OnEventBlock(
             getStateFct = ::getState,
             setStateFct = ::setState,
             launchInStateFct = ::launchInState,

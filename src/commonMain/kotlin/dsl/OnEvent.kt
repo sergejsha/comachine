@@ -1,6 +1,5 @@
 package de.halfbit.comachine.dsl
 
-import kotlinx.coroutines.Job
 import kotlin.reflect.KClass
 
 @PublishedApi
@@ -22,12 +21,4 @@ internal sealed interface OnEvent<State : Any, SubState : State, SubEvent : Any>
 @PublishedApi
 internal enum class LaunchMode {
     Sequential, Concurrent, Latest, Single
-}
-
-@ComachineDsl
-interface OnEventBlock<State : Any, SubState : State> {
-    var state: SubState
-    fun transitionTo(state: State): Nothing
-    fun launch(block: LaunchBlockReceiver<State, SubState>): Job
-    fun launchInMachine(block: LaunchBlockReceiver<State, SubState>): Job
 }
