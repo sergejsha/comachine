@@ -18,7 +18,7 @@ class DelegateCanRegisterWhenNotLoopingTest {
     )
 
     sealed interface Event {
-        object PlayPause : Event
+        object Play : Event
         object Seek : Event
     }
 
@@ -41,8 +41,8 @@ class DelegateCanRegisterWhenNotLoopingTest {
 
         machine.registerDelegate {
             whenIn<State> {
-                on<Event.PlayPause> {
-                    state = state.copy(playing = !state.playing)
+                on<Event.Play> {
+                    state = state.copy(playing = true)
                 }
             }
         }
@@ -70,7 +70,7 @@ class DelegateCanRegisterWhenNotLoopingTest {
             machine.send(Event.Seek)
             machine.await<State> { position == 1 }
 
-            machine.send(Event.PlayPause)
+            machine.send(Event.Play)
             machine.await<State> { playing }
 
             assertEquals(
