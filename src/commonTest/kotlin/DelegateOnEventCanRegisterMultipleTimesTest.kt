@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DelegateCanRegisterWhenNotLoopingTest {
+class DelegateOnEventCanRegisterMultipleTimesTest {
 
     data class State(
         val position: Int = 0,
@@ -17,10 +17,7 @@ class DelegateCanRegisterWhenNotLoopingTest {
         val saved: Boolean = false,
     )
 
-    sealed interface Event {
-        object Play : Event
-        object Seek : Event
-    }
+    object Event
 
     @Test
     fun test() {
@@ -29,19 +26,15 @@ class DelegateCanRegisterWhenNotLoopingTest {
 
         machine.registerDelegate {
             whenIn<State> {
-                onEnter {
-                    launch {
-                        state.update {
-                            copy(saved = true)
-                        }
-                    }
+                on<Event> {
+                    state = state.copy(position = 1)
                 }
             }
         }
 
         machine.registerDelegate {
             whenIn<State> {
-                on<Event.Play> {
+                on<Event> {
                     state = state.copy(playing = true)
                 }
             }
@@ -49,8 +42,8 @@ class DelegateCanRegisterWhenNotLoopingTest {
 
         machine.registerDelegate {
             whenIn<State> {
-                on<Event.Seek> {
-                    state = state.copy(position = state.position + 1)
+                on<Event> {
+                    state = state.copy(saved = true)
                 }
             }
         }
@@ -65,19 +58,14 @@ class DelegateCanRegisterWhenNotLoopingTest {
             }
 
             machine.startInScope(this)
-            machine.await<State> { saved }
-
-            machine.send(Event.Seek)
-            machine.await<State> { position == 1 }
-
-            machine.send(Event.Play)
-            machine.await<State> { playing }
+            machine.send(Event)
+            machine.await<State> { position == 1 && saved && playing }
 
             assertEquals(
                 expected = listOf(
                     State(position = 0, playing = false, saved = false),
                     State(position = 0, playing = false, saved = true),
-                    State(position = 1, playing = false, saved = true),
+                    State(position = 0, playing = true, saved = true),
                     State(position = 1, playing = true, saved = true),
                 ),
                 actual = states
