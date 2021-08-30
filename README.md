@@ -5,8 +5,8 @@ Work in progress. Some changes to API are possible.
 
 # Examples
 
-1. [Simple state machine](https://github.com/beworker/comachine/src/commonTest/kotlin/AggregateStatesTest.kt)
-2. [Mutable state machine and code decomposition](https://github.com/beworker/comachine/src/commonTest/kotlin/DelegateCanRegisterWhenNotLoopingTest.kt)
+1. [Simple state machine](https://github.com/beworker/comachine/blob/master/src/commonTest/kotlin/AggregateStatesTest.kt)
+2. [Mutable state machine and code decomposition](https://github.com/beworker/comachine/blob/master/src/commonTest/kotlin/DelegateCanRegisterWhenNotLoopingTest.kt)
 
 # Binaries
 ```groovy
