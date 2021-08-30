@@ -8,7 +8,6 @@ import de.halfbit.comachine.dsl.OnEventBlock
 import de.halfbit.comachine.dsl.OnExitBlock
 import de.halfbit.comachine.dsl.WhenIn
 import de.halfbit.comachine.runtime.dispatchers.ConcurrentEventDispatcher
-import de.halfbit.comachine.runtime.dispatchers.DefaultEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.LatestEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.SequentialEventDispatcher
 import de.halfbit.comachine.runtime.dispatchers.SingleEventDispatcher
@@ -121,51 +120,6 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
         called.await()
     }
 
-    private fun createEventDispatcher(onEvent: OnEvent<State, SubState, *>) =
-        when (onEvent) {
-            is OnEvent.Default -> DefaultEventDispatcher(
-                eventRuntime = eventRuntime,
-                block = onEvent.block,
-            )
-            is OnEvent.Launchable -> when (onEvent.launchMode) {
-                LaunchMode.Sequential ->
-                    SequentialEventDispatcher(
-                        block = onEvent.block,
-                        launchBlock = launchBlock,
-                        launchInStateFct = ::launchInState,
-                        emitMessage = emitMessage,
-                    )
-                LaunchMode.Concurrent ->
-                    ConcurrentEventDispatcher(
-                        block = onEvent.block,
-                        launchBlock = launchBlock,
-                        launchInStateFct = ::launchInState,
-                        emitMessage = emitMessage,
-                    )
-                LaunchMode.Single ->
-                    SingleEventDispatcher(
-                        block = onEvent.block,
-                        launchBlock = launchBlock,
-                        launchInStateFct = ::launchInState,
-                        emitMessage = emitMessage,
-                    )
-                LaunchMode.Latest ->
-                    LatestEventDispatcher(
-                        block = onEvent.block,
-                        launchBlock = launchBlock,
-                        launchInStateFct = ::launchInState,
-                        emitMessage = emitMessage,
-                    )
-            }
-        } as EventDispatcher<Event>
-
-    private fun getEventDispatcherOrNull(eventType: KClass<out Event>) =
-        eventDispatchers[eventType]
-            ?: whenIn.onEvent[eventType]?.let { onEvent ->
-                createEventDispatcher(onEvent)
-                    .also { eventDispatchers[eventType] = it }
-            }
-
     fun onEnter() {
         var onEnter = whenIn.onEnter
         if (onEnter != null) {
@@ -181,14 +135,64 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     }
 
     fun onEventReceived(event: Event) {
-        getEventDispatcherOrNull(event::class)?.let { eventDispatcher ->
-            try {
-                eventDispatcher.onEventReceived(event)
-            } catch (err: CancellationException) {
-                stateScope.cancel(err)
+        val eventType = event::class
+        val onEvent = whenIn.onEvent[eventType] ?: return
+        when (onEvent) {
+            is OnEvent.NonSuspendable -> {
+                var nextOnEvent = onEvent as OnEvent.NonSuspendable<State, SubState, Event>?
+                try {
+                    while (nextOnEvent != null) {
+                        nextOnEvent.block(eventRuntime, event)
+                        nextOnEvent = nextOnEvent.next
+                    }
+                } catch (err: CancellationException) {
+                    stateScope.cancel(err)
+                }
+            }
+            is OnEvent.Suspendable -> {
+                val eventDispatcher = eventDispatchers[eventType]
+                    ?: createEventDispatcher(onEvent)
+                        .also { eventDispatchers[eventType] = it }
+                try {
+                    eventDispatcher.onEventReceived(event)
+                } catch (err: CancellationException) {
+                    stateScope.cancel(err)
+                }
             }
         }
     }
+
+    private fun createEventDispatcher(onEvent: OnEvent.Suspendable<State, SubState, *>) =
+        when (onEvent.launchMode) {
+            LaunchMode.Sequential ->
+                SequentialEventDispatcher(
+                    block = onEvent.block,
+                    launchBlock = launchBlock,
+                    launchInStateFct = ::launchInState,
+                    emitMessage = emitMessage,
+                )
+            LaunchMode.Concurrent ->
+                ConcurrentEventDispatcher(
+                    block = onEvent.block,
+                    launchBlock = launchBlock,
+                    launchInStateFct = ::launchInState,
+                    emitMessage = emitMessage,
+                )
+            LaunchMode.Single ->
+                SingleEventDispatcher(
+                    block = onEvent.block,
+                    launchBlock = launchBlock,
+                    launchInStateFct = ::launchInState,
+                    emitMessage = emitMessage,
+                )
+            LaunchMode.Latest ->
+                LatestEventDispatcher(
+                    block = onEvent.block,
+                    launchBlock = launchBlock,
+                    launchInStateFct = ::launchInState,
+                    emitMessage = emitMessage,
+                )
+        } as EventDispatcher<Event>
 
     fun onEventCompleted(event: Event) {
         eventDispatchers[event::class]?.let { eventDispatcher ->

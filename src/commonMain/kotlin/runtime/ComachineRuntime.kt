@@ -24,7 +24,7 @@ internal class ComachineRuntime<State : Any, Event : Any>(
     private val whenIns: MutableMap<KClass<out State>, WhenIn<State, out State>>,
 ) {
     private val messageFlow = MutableSharedFlow<Message>()
-    private var whereInRuntime: WhenInRuntime<State, out State, Event>? = null
+    private var whenInRuntime: WhenInRuntime<State, out State, Event>? = null
     private var pendingEntryState: State? = null
 
     suspend fun send(event: Event) {
@@ -69,16 +69,16 @@ internal class ComachineRuntime<State : Any, Event : Any>(
             }
 
     private fun onEventReceived(event: Event) {
-        checkNotNull(whereInRuntime) { "WhenIn block is missing for $event in $state" }
+        checkNotNull(whenInRuntime) { "WhenIn block is missing for $event in $state" }
             .onEventReceived(event)
     }
 
     private fun onEventCompleted(event: Event) {
-        whereInRuntime?.onEventCompleted(event)
+        whenInRuntime?.onEventCompleted(event)
     }
 
     private fun transitionTo(state: State) {
-        whereInRuntime?.onExit()
+        whenInRuntime?.onExit()
         check(pendingEntryState == null) {
             reportError("Pending entry state is already set.")
         }
@@ -87,8 +87,8 @@ internal class ComachineRuntime<State : Any, Event : Any>(
 
     private fun onEnterState(state: State) {
         emitState(state)
-        whereInRuntime = createWhereIn(state)
-        whereInRuntime?.onEnter()
+        whenInRuntime = createWhereIn(state)
+        whenInRuntime?.onEnter()
     }
 
     private fun emitState(state: State) {
