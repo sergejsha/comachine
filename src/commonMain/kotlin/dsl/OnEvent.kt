@@ -9,8 +9,10 @@ internal sealed interface OnEvent<State : Any, SubState : State, SubEvent : Any>
     class NonSuspendable<State : Any, SubState : State, SubEvent : Any>(
         override val eventType: KClass<SubEvent>,
         val block: OnEventBlock<State, SubState>.(SubEvent) -> Unit,
-        val next: NonSuspendable<State, SubState, SubEvent>?,
-    ) : OnEvent<State, SubState, SubEvent>
+        val mainBlock: Boolean = false,
+        override var next: NonSuspendable<State, SubState, SubEvent>? = null,
+    ) : OnEvent<State, SubState, SubEvent>,
+        Linked<NonSuspendable<State, SubState, SubEvent>>
 
     class Suspendable<State : Any, SubState : State, SubEvent : Any>(
         override val eventType: KClass<SubEvent>,

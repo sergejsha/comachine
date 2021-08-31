@@ -21,48 +21,36 @@ internal constructor(
     inline fun <reified SubEvent : Event> onSequential(
         noinline block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit
     ) {
-        addUniqueEvent(OnEvent.Suspendable(SubEvent::class, LaunchMode.Sequential, block))
+        onSuspendableEvent(OnEvent.Suspendable(SubEvent::class, LaunchMode.Sequential, block))
     }
 
     /** A new event is executed concurrently to already processed events. */
     inline fun <reified SubEvent : Event> onConcurrent(
         noinline block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit
     ) {
-        addUniqueEvent(OnEvent.Suspendable(SubEvent::class, LaunchMode.Concurrent, block))
+        onSuspendableEvent(OnEvent.Suspendable(SubEvent::class, LaunchMode.Concurrent, block))
     }
 
     /** A new event replaces the current event, if such. Current event is cancelled. */
     inline fun <reified SubEvent : Event> onLatest(
         noinline block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit
     ) {
-        addUniqueEvent(OnEvent.Suspendable(SubEvent::class, LaunchMode.Latest, block))
+        onSuspendableEvent(OnEvent.Suspendable(SubEvent::class, LaunchMode.Latest, block))
     }
 
     /** A new event is ignored if there is an event in processing. */
     inline fun <reified SubEvent : Event> onSingle(
         noinline block: suspend LaunchBlock<State, SubState>.(SubEvent) -> Unit
     ) {
-        addUniqueEvent(OnEvent.Suspendable(SubEvent::class, LaunchMode.Single, block))
+        onSuspendableEvent(OnEvent.Suspendable(SubEvent::class, LaunchMode.Single, block))
     }
 
+    /** Register new non suspendable event handler. */
     inline fun <reified SubEvent : Event> on(
+        main: Boolean = false,
         noinline block: OnEventBlock<State, SubState>.(SubEvent) -> Unit,
     ) {
-        val eventType = SubEvent::class
-        when (val onEvent = whenIn.onEvent[eventType]) {
-            null, is OnEvent.NonSuspendable -> {
-                val next = onEvent as OnEvent.NonSuspendable<State, SubState, SubEvent>?
-                whenIn.onEvent[eventType] = OnEvent.NonSuspendable(SubEvent::class, block, next)
-            }
-            is OnEvent.Suspendable ->
-                throw IllegalArgumentException(
-                    "Suspendable event handler for $eventType is already declared" +
-                        " in ${whenIn.stateType} with launch mode ${onEvent.launchMode}." +
-                        " Mixing non-suspendable on<Event> with suspendable on-handlers" +
-                        " is not supported. Use either multiple on<Event> handlers or a single" +
-                        " suspendable handler."
-                )
-        }
+        onNonSuspendableEvent(SubEvent::class, main, block)
     }
 
     fun onEnter(
@@ -90,7 +78,40 @@ internal constructor(
     }
 
     @PublishedApi
-    internal fun addUniqueEvent(event: OnEvent<State, SubState, *>) {
+    internal fun <SubEvent : Event> onNonSuspendableEvent(
+        eventType: KClass<SubEvent>,
+        main: Boolean,
+        block: OnEventBlock<State, SubState>.(SubEvent) -> Unit
+    ) {
+        when (val onEvent = whenIn.onEvent[eventType]) {
+            null, is OnEvent.NonSuspendable -> {
+                val nonSuspendableOnEvent = onEvent
+                    as OnEvent.NonSuspendable<State, SubState, SubEvent>?
+
+                when {
+                    main && nonSuspendableOnEvent?.mainBlock == true ->
+                        throwMultipleMainHandlers("on<${eventType.simpleName}>")
+                    main || nonSuspendableOnEvent == null ->
+                        whenIn.onEvent[eventType] =
+                            OnEvent.NonSuspendable(eventType, block, main, nonSuspendableOnEvent)
+                    else ->
+                        nonSuspendableOnEvent.last.next =
+                            OnEvent.NonSuspendable(eventType, block)
+                }
+            }
+            is OnEvent.Suspendable ->
+                throw IllegalArgumentException(
+                    "Suspendable event handler for $eventType is already declared" +
+                        " in ${whenIn.stateType} with launch mode ${onEvent.launchMode}." +
+                        " Mixing non-suspendable on<Event> with suspendable on-handlers" +
+                        " is not supported. Use either multiple on<Event> handlers or a single" +
+                        " suspendable handler."
+                )
+        }
+    }
+
+    @PublishedApi
+    internal fun onSuspendableEvent(event: OnEvent<State, SubState, *>) {
         whenIn.onEvent.put(event.eventType, event)?.let {
             throw IllegalArgumentException(
                 "Event handler for ${event.eventType} is already declared" +
@@ -99,7 +120,8 @@ internal constructor(
         }
     }
 
-    private fun throwMultipleMainHandlers(blockName: String): Nothing =
+    @PublishedApi
+    internal fun throwMultipleMainHandlers(blockName: String): Nothing =
         throw IllegalArgumentException(
             "Main $blockName handler is already declared." +
                 " Only one main handler is allowed."
