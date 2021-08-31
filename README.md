@@ -1,7 +1,7 @@
 # Comachine
 Finite-State Machine for Kotlin coroutines (multiplatform).
 
-Work in progress. Some minor changes to API are still possible.
+The library is [still in development](https://github.com/beworker/comachine/issues/1). Some minor changes to API are still possible.
 
 # Examples
 
