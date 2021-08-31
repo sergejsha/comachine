@@ -70,13 +70,10 @@ internal constructor(
         block: OnEventBlock<State, SubState>.() -> Unit,
     ) {
         val onEnter = whenIn.onEnter
-        if (main && onEnter?.mainBlock == true)
-            throwMultipleMainHandlers("onEnter")
-
-        if (main || onEnter == null) {
-            whenIn.onEnter = OnEnter(block, main, onEnter)
-        } else {
-            onEnter.last.next = OnEnter(block)
+        when {
+            main && onEnter?.mainBlock == true -> throwMultipleMainHandlers("onEnter")
+            main || onEnter == null -> whenIn.onEnter = OnEnter(block, main, onEnter)
+            else -> onEnter.last.next = OnEnter(block)
         }
     }
 
@@ -85,13 +82,10 @@ internal constructor(
         block: OnExitBlock<SubState>.() -> Unit,
     ) {
         val onExit = whenIn.onExit
-        if (main && onExit?.mainBlock == true)
-            throwMultipleMainHandlers("onExit")
-
-        if (main || onExit == null) {
-            whenIn.onExit = OnExit(block, main, onExit)
-        } else {
-            onExit.last.next = OnExit(block)
+        when {
+            main && onExit?.mainBlock == true -> throwMultipleMainHandlers("onExit")
+            main || onExit == null -> whenIn.onExit = OnExit(block, main, onExit)
+            else -> onExit.last.next = OnExit(block)
         }
     }
 
@@ -107,7 +101,8 @@ internal constructor(
 
     private fun throwMultipleMainHandlers(blockName: String): Nothing =
         throw IllegalArgumentException(
-            "Main $blockName handler is already declared. Only one main handler is allowed."
+            "Main $blockName handler is already declared." +
+                " Only one main handler is allowed."
         )
 }
 
