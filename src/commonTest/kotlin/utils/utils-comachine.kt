@@ -10,20 +10,20 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration
 
 suspend inline fun <reified State : Any> Comachine<*, *>.await(
-    timeout: Duration = Duration.milliseconds(5000)
+    timeout: Duration = Duration.milliseconds(1000)
 ) {
     await<State>(timeout) { this::class == State::class }
 }
 
 suspend inline fun <reified State : Any> Comachine<*, *>.await(
-    timeout: Duration = Duration.milliseconds(3000),
+    timeout: Duration = Duration.milliseconds(1000),
     crossinline block: State.() -> Boolean
 ) {
     try {
         coroutineScope {
             launch {
                 delay(timeout)
-                error("timeout")
+                error("test cancelled by timeout")
             }
             state.collect {
                 if (it is State && block(it)) {
@@ -31,7 +31,7 @@ suspend inline fun <reified State : Any> Comachine<*, *>.await(
                 }
             }
         }
-    } catch (err: CancellationException) {
-        // all good
+    } catch (ignored: CancellationException) {
+        // we are good
     }
 }
