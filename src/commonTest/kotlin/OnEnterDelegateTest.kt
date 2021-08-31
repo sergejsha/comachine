@@ -87,7 +87,7 @@ class OnEnterDelegateTest {
 
         machine.registerDelegate {
             whenIn<State> {
-                onEnter(mainBlock = true) {
+                onEnter(main = true) {
                     state = state.copy(playing = true)
                 }
             }
@@ -140,7 +140,7 @@ class OnEnterDelegateTest {
 
         machine.registerDelegate {
             whenIn<State> {
-                onEnter(mainBlock = true) {
+                onEnter(main = true) {
                     state = state.copy(playing = true)
                 }
             }
@@ -149,7 +149,7 @@ class OnEnterDelegateTest {
         try {
             machine.registerDelegate {
                 whenIn<State> {
-                    onEnter(mainBlock = true) {
+                    onEnter(main = true) {
                         state = state.copy(saved = true)
                     }
                 }

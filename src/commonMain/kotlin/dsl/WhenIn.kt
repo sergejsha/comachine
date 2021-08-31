@@ -66,22 +66,33 @@ internal constructor(
     }
 
     fun onEnter(
-        mainBlock: Boolean = false,
+        main: Boolean = false,
         block: OnEventBlock<State, SubState>.() -> Unit,
     ) {
         val onEnter = whenIn.onEnter
-        if (mainBlock && onEnter?.mainBlock == true)
+        if (main && onEnter?.mainBlock == true)
             throwMultipleMainHandlers("onEnter")
-        
-        if (mainBlock || onEnter == null) {
-            whenIn.onEnter = OnEnter(mainBlock, block, onEnter)
+
+        if (main || onEnter == null) {
+            whenIn.onEnter = OnEnter(main, block, onEnter)
         } else {
             onEnter.last.next = OnEnter(mainBlock = false, block)
         }
     }
 
-    fun onExit(block: OnExitBlock<SubState>.() -> Unit) {
-        whenIn.onExit = OnExit(block, whenIn.onExit)
+    fun onExit(
+        main: Boolean = false,
+        block: OnExitBlock<SubState>.() -> Unit,
+    ) {
+        val onExit = whenIn.onExit
+        if (main && onExit?.mainBlock == true)
+            throwMultipleMainHandlers("onExit")
+
+        if (main || onExit == null) {
+            whenIn.onExit = OnExit(main, block, onExit)
+        } else {
+            onExit.last.next = OnExit(mainBlock = false, block)
+        }
     }
 
     @PublishedApi
@@ -106,5 +117,14 @@ internal constructor(
                 nextOnEnter = nextOnEnter.next as OnEnter<State, SubState>
             }
             return nextOnEnter
+        }
+
+    private val OnExit<SubState>.last: OnExit<SubState>
+        get() {
+            var nextOnExit = this
+            while (nextOnExit.next != null) {
+                nextOnExit = nextOnExit.next as OnExit<SubState>
+            }
+            return nextOnExit
         }
 }

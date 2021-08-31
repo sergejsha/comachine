@@ -2,6 +2,7 @@ package de.halfbit.comachine.dsl
 
 @PublishedApi
 internal data class OnExit<SubState : Any>(
+    val mainBlock: Boolean = false,
     val block: OnExitBlock<SubState>.() -> Unit,
-    val next: OnExit<SubState>?,
+    var next: OnExit<SubState>? = null,
 )
