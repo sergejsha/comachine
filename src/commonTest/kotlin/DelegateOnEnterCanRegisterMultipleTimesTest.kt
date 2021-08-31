@@ -61,8 +61,8 @@ class DelegateOnEnterCanRegisterMultipleTimesTest {
             assertEquals(
                 expected = listOf(
                     State(position = 0, playing = false, saved = false),
-                    State(position = 0, playing = false, saved = true),
-                    State(position = 0, playing = true, saved = true),
+                    State(position = 1, playing = false, saved = false),
+                    State(position = 1, playing = true, saved = false),
                     State(position = 1, playing = true, saved = true),
                 ),
                 actual = states

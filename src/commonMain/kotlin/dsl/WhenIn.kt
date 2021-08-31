@@ -65,8 +65,19 @@ internal constructor(
         }
     }
 
-    fun onEnter(block: OnEventBlock<State, SubState>.() -> Unit) {
-        whenIn.onEnter = OnEnter(block, whenIn.onEnter)
+    fun onEnter(
+        mainBlock: Boolean = false,
+        block: OnEventBlock<State, SubState>.() -> Unit,
+    ) {
+        val onEnter = whenIn.onEnter
+        if (mainBlock && onEnter?.mainBlock == true)
+            throwMultipleMainHandlers("onEnter")
+        
+        if (mainBlock || onEnter == null) {
+            whenIn.onEnter = OnEnter(mainBlock, block, onEnter)
+        } else {
+            onEnter.last.next = OnEnter(mainBlock = false, block)
+        }
     }
 
     fun onExit(block: OnExitBlock<SubState>.() -> Unit) {
@@ -82,4 +93,18 @@ internal constructor(
             )
         }
     }
+
+    private fun throwMultipleMainHandlers(blockName: String): Nothing =
+        throw IllegalArgumentException(
+            "Main $blockName handler is already declared. Only one main handler is allowed."
+        )
+
+    private val OnEnter<State, SubState>.last: OnEnter<State, SubState>
+        get() {
+            var nextOnEnter = this
+            while (nextOnEnter.next != null) {
+                nextOnEnter = nextOnEnter.next as OnEnter<State, SubState>
+            }
+            return nextOnEnter
+        }
 }
