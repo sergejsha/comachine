@@ -74,9 +74,9 @@ internal constructor(
             throwMultipleMainHandlers("onEnter")
 
         if (main || onEnter == null) {
-            whenIn.onEnter = OnEnter(main, block, onEnter)
+            whenIn.onEnter = OnEnter(block, main, onEnter)
         } else {
-            onEnter.last.next = OnEnter(mainBlock = false, block)
+            onEnter.last.next = OnEnter(block)
         }
     }
 
@@ -89,9 +89,9 @@ internal constructor(
             throwMultipleMainHandlers("onExit")
 
         if (main || onExit == null) {
-            whenIn.onExit = OnExit(main, block, onExit)
+            whenIn.onExit = OnExit(block, main, onExit)
         } else {
-            onExit.last.next = OnExit(mainBlock = false, block)
+            onExit.last.next = OnExit(block)
         }
     }
 
@@ -109,21 +109,15 @@ internal constructor(
         throw IllegalArgumentException(
             "Main $blockName handler is already declared. Only one main handler is allowed."
         )
+}
 
-    private val OnEnter<State, SubState>.last: OnEnter<State, SubState>
-        get() {
-            var nextOnEnter = this
-            while (nextOnEnter.next != null) {
-                nextOnEnter = nextOnEnter.next as OnEnter<State, SubState>
-            }
-            return nextOnEnter
-        }
-
-    private val OnExit<SubState>.last: OnExit<SubState>
+internal interface Linked<T : Any> {
+    var next: T?
+    val last: Linked<T>
         get() {
             var nextOnExit = this
             while (nextOnExit.next != null) {
-                nextOnExit = nextOnExit.next as OnExit<SubState>
+                nextOnExit = nextOnExit.next as Linked<T>
             }
             return nextOnExit
         }
