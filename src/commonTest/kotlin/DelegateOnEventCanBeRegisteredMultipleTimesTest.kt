@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DelegateOnEventCanRegisterMultipleTimesTest {
+class DelegateOnEventCanBeRegisteredMultipleTimesTest {
 
     data class State(
         val position: Int = 0,

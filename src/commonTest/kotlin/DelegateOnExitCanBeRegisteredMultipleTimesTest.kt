@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DelegateOnExitCanRegisterMultipleTimesTest {
+class DelegateOnExitCanBeRegisteredMultipleTimesTest {
 
     sealed interface State {
         object One : State
