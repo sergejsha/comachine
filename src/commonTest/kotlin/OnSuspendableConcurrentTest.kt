@@ -22,6 +22,7 @@ class OnSuspendableConcurrentTest {
 
         val first = CompletableDeferred<Unit>()
         val second = CompletableDeferred<Unit>()
+        
         val machine = comachine<State, Event>(startWith = State()) {
             whenIn<State> {
                 onConcurrent<Event> { event ->

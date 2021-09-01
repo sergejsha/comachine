@@ -23,7 +23,7 @@ suspend inline fun <reified State : Any> Comachine<*, *>.await(
         coroutineScope {
             launch {
                 delay(timeout)
-                error("test cancelled by timeout")
+                error("await was cancelled by timeout")
             }
             state.collect {
                 if (it is State && block(it)) {

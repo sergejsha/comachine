@@ -24,6 +24,7 @@ class OnSuspendableSequentialTest {
         val events = mutableListOf<Event>()
         val eventTwoSent = CompletableDeferred<Unit>()
         val eventTwoReceived = CompletableDeferred<Unit>()
+
         val machine = comachine<State, Event>(startWith = State()) {
             whenIn<State> {
                 onSequential<Event> { event ->
