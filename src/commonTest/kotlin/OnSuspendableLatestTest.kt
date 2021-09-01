@@ -2,6 +2,7 @@ package de.halfbit.comachine.tests
 
 import de.halfbit.comachine.comachine
 import de.halfbit.comachine.startInScope
+import de.halfbit.comachine.tests.utils.await
 import de.halfbit.comachine.tests.utils.executeBlockingTest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -16,35 +17,29 @@ import kotlin.test.assertTrue
 
 class OnSuspendableLatestTest {
 
-    data class State(
-        val counter: Int = 0,
-    )
-
+    data class State(val done: Boolean = false)
     data class Event(val index: Int)
 
     @Test
-    fun test() {
+    fun newEventsReplaceTheCurrentOneIfItWasInProgress() {
 
         val events = mutableListOf<Event>()
         var firstEventJob: Job? = null
-        val eventOneReceived = CompletableDeferred<Unit>()
-        val eventTwoReceived = CompletableDeferred<Unit>()
-        
+        val allEventsSent = CompletableDeferred<Unit>()
+
         val machine = comachine<State, Event>(startWith = State()) {
             whenIn<State> {
                 onLatest<Event> { event ->
+                    events.add(event)
                     coroutineScope {
-                        events.add(event)
-                        if (event.index == 1) {
+                        if (event.index == 0) {
                             firstEventJob = launch { delay(1000) }
-                            eventOneReceived.complete(Unit)
-                            delay(1000)
-                            events.add(event)
                         }
-
-                        if (event.index == 2) {
-                            eventTwoReceived.complete(Unit)
+                        withTimeout(1000) {
+                            allEventsSent.await()
                         }
+                        events.add(event)
+                        state.update { copy(done = true) }
                     }
                 }
             }
@@ -60,22 +55,22 @@ class OnSuspendableLatestTest {
             }
 
             machine.startInScope(this)
-            machine.send(Event(index = 1))
-            withTimeout(1000) {
-                eventOneReceived.await()
+            repeat(10) {
+                machine.send(Event(index = it))
             }
-            machine.send(Event(index = 2))
-            withTimeout(1000) {
-                eventTwoReceived.await()
-            }
+            allEventsSent.complete(Unit)
+            machine.await<State> { done }
 
-            assertEquals(
-                expected = listOf(
-                    Event(index = 1),
-                    Event(index = 2)
-                ),
-                actual = events
+            assertTrue(
+                actual = events.size >= 3,
+                message = "The list can have less events, because some events can be" +
+                    " cancelled even before they are scheduled for launch. Nonetheless," +
+                    " the very first and the very last event (twice, because the last event" +
+                    " is processed completely) are expected."
             )
+            assertEquals(events[0], Event(index = 0))
+            assertEquals(events[events.lastIndex - 1], Event(index = 9))
+            assertEquals(events[events.lastIndex], Event(index = 9))
 
             assertTrue(
                 actual = firstEventJob?.isCancelled == true,

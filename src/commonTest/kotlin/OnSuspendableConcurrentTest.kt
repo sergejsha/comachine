@@ -2,36 +2,36 @@ package de.halfbit.comachine.tests
 
 import de.halfbit.comachine.comachine
 import de.halfbit.comachine.startInScope
+import de.halfbit.comachine.tests.utils.await
 import de.halfbit.comachine.tests.utils.executeBlockingTest
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class OnSuspendableConcurrentTest {
 
-    data class State(
-        val counter: Int = 0,
-    )
-
+    data class State(val counter: Int = 0)
     data class Event(val index: Int)
 
     @Test
-    fun test() {
+    fun newEventsAreProcessedConcurrentlyToCurrentEvents() {
 
-        val first = CompletableDeferred<Unit>()
-        val second = CompletableDeferred<Unit>()
-        
+        val events = mutableListOf<Event>()
+        val secondBucketSent = CompletableDeferred<Unit>()
+
         val machine = comachine<State, Event>(startWith = State()) {
             whenIn<State> {
                 onConcurrent<Event> { event ->
-                    when (event.index) {
-                        1 -> first.complete(Unit)
-                        2 -> second.complete(Unit)
+                    if (event.index < 5) {
+                        withTimeout(1000) {
+                            secondBucketSent.await()
+                        }
                     }
-                    delay(1000)
-                    error("delay wasn't cancelled in time")
+                    events.add(event)
+                    state.update { copy(counter = counter + event.index) }
                 }
             }
         }
@@ -46,11 +46,22 @@ class OnSuspendableConcurrentTest {
             }
 
             machine.startInScope(this)
-            machine.send(Event(index = 1))
-            machine.send(Event(index = 2))
 
-            first.await()
-            second.await()
+            launch {
+                repeat(5) {
+                    machine.send(Event(index = it))
+                }
+            }
+
+            launch {
+                repeat(5) {
+                    machine.send(Event(index = 5 + it))
+                }
+                secondBucketSent.complete(Unit)
+            }
+
+            machine.await<State> { counter == 45 }
+            assertEquals(expected = events.size, actual = 10)
         }
     }
 }

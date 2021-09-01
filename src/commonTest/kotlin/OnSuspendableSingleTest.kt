@@ -21,7 +21,7 @@ class OnSuspendableSingleTest {
     data class Event(val index: Int)
 
     @Test
-    fun followingEventsIgnoredWhileCurrentIsStillInProgressTest() {
+    fun newEventsAreIgnoredWhileCurrentIsStillInProgress() {
 
         val events = mutableListOf<Event>()
         var firstEventJob: Job? = null
@@ -34,11 +34,11 @@ class OnSuspendableSingleTest {
                     coroutineScope {
                         if (event.index == 0) {
                             firstEventJob = launch { delay(1000) }
-                            withTimeout(1000) {
-                                allEventsSent.await()
-                            }
-                            state.update { copy(done = true) }
                         }
+                        withTimeout(1000) {
+                            allEventsSent.await()
+                        }
+                        state.update { copy(done = true) }
                     }
                 }
             }
