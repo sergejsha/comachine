@@ -25,7 +25,7 @@ internal constructor(
         throw TransitionPerformedException()
     }
 
-    fun launch(block: LaunchBlockReceiver<State, SubState>): Job =
+    fun launchInState(block: LaunchBlockReceiver<State, SubState>): Job =
         stateScope.launch { block(this@LaunchBlock) }
 
     fun launchInMachine(block: LaunchBlockReceiver<State, SubState>): Job =

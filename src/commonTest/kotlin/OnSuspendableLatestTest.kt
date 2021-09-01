@@ -5,6 +5,7 @@ import de.halfbit.comachine.startInScope
 import de.halfbit.comachine.tests.utils.executeBlockingTest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -31,16 +32,18 @@ class OnSuspendableLatestTest {
         val machine = comachine<State, Event>(startWith = State()) {
             whenIn<State> {
                 onLatest<Event> { event ->
-                    events.add(event)
-                    if (event.index == 1) {
-                        firstEventJob = launch { delay(1000) }
-                        eventOneReceived.complete(Unit)
-                        delay(1000)
+                    coroutineScope {
                         events.add(event)
-                    }
+                        if (event.index == 1) {
+                            firstEventJob = launch { delay(1000) }
+                            eventOneReceived.complete(Unit)
+                            delay(1000)
+                            events.add(event)
+                        }
 
-                    if (event.index == 2) {
-                        eventTwoReceived.complete(Unit)
+                        if (event.index == 2) {
+                            eventTwoReceived.complete(Unit)
+                        }
                     }
                 }
             }

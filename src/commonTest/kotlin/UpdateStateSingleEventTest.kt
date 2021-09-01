@@ -35,11 +35,11 @@ class UpdateStateSingleEventTest {
         ) {
             whenIn<State> {
                 onEnter {
-                    launch {
+                    launchInState {
                         state.update { copy(progress = progress + 1) }
 
                         val updateCalled = CompletableDeferred<Unit>()
-                        launch {
+                        launchInState {
                             coroutineScope {
                                 state.update { copy(progress = progress + 1) }
                                 state.update { copy(progress = progress + 1) }

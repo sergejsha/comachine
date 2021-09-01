@@ -26,7 +26,7 @@ class UpdateStateMultipleEventsTest {
         ) {
             whenIn<State> {
                 onEnter {
-                    launch {
+                    launchInState {
                         for (i in 0..99) {
                             state.update { copy(progress = progress + 1) }
                             if (i % 5 == 0) {

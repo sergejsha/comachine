@@ -30,7 +30,7 @@ class TransitionToCancelsJobsInOldStateTest {
         ) {
             whenIn<State.Loading> {
                 onEnter {
-                    job = launch {
+                    job = launchInState {
                         loadingStarted.complete(Unit)
                         delay(10000)
                     }

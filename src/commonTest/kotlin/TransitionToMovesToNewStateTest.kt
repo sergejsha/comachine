@@ -64,7 +64,7 @@ class TransitionToMovesToNewStateTest {
             whenIn<State.Loading> {
                 val loadingCompleted = CompletableDeferred<Unit>()
                 onEnter {
-                    launch {
+                    launchInState {
                         val asset = Actions.loadAsset(state.location, loadingCompleted)
                         transitionTo { State.Ready(asset, startPlaying) }
                     }
@@ -76,7 +76,7 @@ class TransitionToMovesToNewStateTest {
             }
             whenIn<State.Ready> {
                 onEnter {
-                    launch {
+                    launchInState {
                         Actions.play(state.asset, state.playing)
                     }
                 }

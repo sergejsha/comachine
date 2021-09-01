@@ -30,7 +30,7 @@ class DelegateOnAnyCanBeRegisteredTest {
         machine.registerDelegate {
             whenIn<State> {
                 onEnter {
-                    launch {
+                    launchInState {
                         state.update {
                             copy(saved = true)
                         }

@@ -42,7 +42,7 @@ internal constructor(
         throw TransitionPerformedException()
     }
 
-    fun launch(block: LaunchBlockReceiver<State, SubState>) =
+    fun launchInState(block: LaunchBlockReceiver<State, SubState>) =
         launchInStateFct(block)
 
     fun launchInMachine(block: LaunchBlockReceiver<State, SubState>) =
