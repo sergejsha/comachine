@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DelegateCanBeRegisteredTest {
+class DelegateOnAnyCanBeRegisteredTest {
 
     data class State(
         val position: Int = 0,
