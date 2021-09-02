@@ -1,5 +1,6 @@
 package de.halfbit.comachine.dsl
 
+import de.halfbit.comachine.runtime.StateHolder
 import de.halfbit.comachine.runtime.TransitionPerformedException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -8,13 +9,13 @@ import kotlinx.coroutines.launch
 @ComachineDsl
 class LaunchBlock<State : Any, SubState : State>
 internal constructor(
-    private val getStateFct: () -> SubState,
+    private val stateHolder: StateHolder<State, SubState>,
     private val stateScope: CoroutineScope,
     private val machineScope: CoroutineScope,
     private val updateStateFct: suspend ((SubState) -> SubState) -> Unit,
     private val transitionToFct: suspend ((SubState) -> State) -> Unit,
 ) {
-    val state: SubState get() = getStateFct()
+    val state: SubState get() = stateHolder.get()
 
     suspend fun SubState.update(block: SubState.() -> SubState) {
         updateStateFct(block)

@@ -53,17 +53,16 @@ internal class ComachineRuntime<State : Any, Event : Any>(
             }
     }
 
-    private fun <SubState : State> createWhereIn(
+    private fun <SubState : State> createWhereInOrNull(
         state: SubState
     ): WhenInRuntime<State, SubState, Event>? =
         (whenIns[state::class] as? WhenIn<State, SubState>)
             ?.let {
                 WhenInRuntime(
-                    state = state,
+                    stateHolder = StateHolder(state, stateFlow),
                     whenIn = it,
                     machineScope = machineScope,
                     transitionToFct = ::transitionTo,
-                    emitStateFct = ::emitState,
                     emitMessage = messageFlow::emit,
                 )
             }
@@ -87,7 +86,7 @@ internal class ComachineRuntime<State : Any, Event : Any>(
 
     private fun onEnterState(state: State) {
         emitState(state)
-        whenInRuntime = createWhereIn(state)
+        whenInRuntime = createWhereInOrNull(state)
         whenInRuntime?.onEnter()
     }
 
@@ -100,3 +99,17 @@ internal class ComachineRuntime<State : Any, Event : Any>(
 
 internal fun reportError(message: String): String =
     "$message Please report this bug to https://github.com/beworker/comachine/"
+
+@PublishedApi
+internal class StateHolder<State : Any, SubState : State>(
+    private var state: SubState,
+    private val stateFlow: MutableSharedFlow<State>,
+) {
+    fun get(): SubState = state
+    fun set(newState: SubState) {
+        state = newState
+        check(stateFlow.tryEmit(newState)) {
+            reportError("StateFlow suspended although it never should.")
+        }
+    }
+}

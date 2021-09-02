@@ -1,5 +1,6 @@
 package de.halfbit.comachine.dsl
 
+import de.halfbit.comachine.runtime.StateHolder
 import de.halfbit.comachine.runtime.TransitionPerformedException
 import kotlinx.coroutines.Job
 import kotlin.reflect.KClass
@@ -7,8 +8,7 @@ import kotlin.reflect.KClass
 @ComachineDsl
 class OnEventBlock<State : Any, SubState : State>
 internal constructor(
-    @PublishedApi internal val getStateFct: () -> SubState,
-    @PublishedApi internal val setStateFct: (SubState) -> Unit,
+    @PublishedApi internal val stateHolder: StateHolder<State, SubState>,
     @PublishedApi internal val extras: Lazy<MutableMap<KClass<*>, Any?>>,
     private val transitionToFct: (State) -> Unit,
     private val launchInStateFct: (LaunchBlockReceiver<State, SubState>) -> Job,
@@ -16,10 +16,10 @@ internal constructor(
 ) {
 
     val state: SubState
-        get() = getStateFct()
+        get() = stateHolder.get()
 
     inline fun SubState.update(block: SubState.() -> SubState) {
-        setStateFct(block(getStateFct()))
+        stateHolder.set(block(stateHolder.get()))
     }
 
     inline fun <reified T> getExtra(): T {

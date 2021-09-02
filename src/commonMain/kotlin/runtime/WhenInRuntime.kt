@@ -22,11 +22,10 @@ import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
 internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
-    private var state: SubState,
+    private val stateHolder: StateHolder<State, SubState>,
     private val whenIn: WhenIn<State, SubState>,
     private val machineScope: CoroutineScope,
     private val transitionToFct: (State) -> Unit,
-    private val emitStateFct: (State) -> Unit,
     private val emitMessage: EmitMessage,
 ) {
 
@@ -44,7 +43,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
 
     private val launchBlock: LaunchBlock<State, SubState> by lazy {
         LaunchBlock(
-            getStateFct = ::getState,
+            stateHolder = stateHolder,
             stateScope = stateScope,
             machineScope = machineScope,
             updateStateFct = ::updateState,
@@ -54,8 +53,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
 
     private val eventRuntime: OnEventBlock<State, SubState> by lazy {
         OnEventBlock(
-            getStateFct = ::getState,
-            setStateFct = ::setState,
+            stateHolder = stateHolder,
             extras = extras,
             launchInStateFct = ::launchInState,
             launchInMachineFct = ::launchInMachine,
@@ -75,17 +73,6 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
     private fun launchInMachine(block: LaunchBlockReceiver<State, SubState>) =
         machineScope.launch { block(launchBlock) }
 
-    private fun getState(): SubState = state
-    private fun setState(newState: SubState) {
-        state = newState
-        emitStateFct(newState)
-    }
-
-    private fun updateState(newState: SubState) {
-        state = newState
-        emitStateFct(newState)
-    }
-
     private suspend fun updateState(block: (SubState) -> SubState) {
         val called = CompletableDeferred<Unit>()
         stateScope.launch {
@@ -93,7 +80,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
                 Message.OnCallback(
                     callback = {
                         if (stateScope.isActive) {
-                            updateState(block(state))
+                            stateHolder.set(block(stateHolder.get()))
                         }
                         called.complete(Unit)
                     }
@@ -110,7 +97,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
                 Message.OnCallback(
                     callback = {
                         if (stateScope.isActive) {
-                            transitionToFct(block(state))
+                            transitionToFct(block(stateHolder.get()))
                         }
                         called.complete(Unit)
                     }
@@ -208,7 +195,7 @@ internal class WhenInRuntime<State : Any, SubState : State, Event : Any>(
         var onExit = whenIn.onExit
         if (onExit != null) {
             val onExitBlock = OnExitBlock(
-                getStateFct = ::getState,
+                getStateFct = stateHolder::get,
                 extras = extras,
                 launchInMachineFct = ::launchInMachine,
             )
@@ -234,4 +221,4 @@ internal interface EventDispatcher<SubEvent : Any> {
     fun onEventCompleted(event: SubEvent) {}
 }
 
-internal class TransitionPerformedException : CancellationException("transition performed")
+internal class TransitionPerformedException : CancellationException("cancelled on transition")
