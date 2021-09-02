@@ -29,19 +29,19 @@ class OnEnterCalledInConcurrentDispatcherTest {
             startWith = State.Zero(count = 0)
         ) {
             whenIn<State.Zero> {
-                onEnter { state = state.copy(state.count + 1) }
+                onEnter { state.update { copy(count = count + 1) } }
                 onConcurrent<Event.One> {
                     transitionTo { State.One(count = count) }
                 }
             }
             whenIn<State.One> {
-                onEnter { state = state.copy(state.count + 1) }
+                onEnter { state.update { copy(count = count + 1) } }
                 onConcurrent<Event.Two> {
                     transitionTo { State.Two(count = count) }
                 }
             }
             whenIn<State.Two> {
-                onEnter { state = state.copy(state.count + 1) }
+                onEnter { state.update { copy(count = count + 1) } }
                 onConcurrent<Event.Three> {
                     transitionTo { State.Zero(count = count) }
                 }

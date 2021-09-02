@@ -27,7 +27,7 @@ class DelegateOnEnterTest {
         machine.registerDelegate {
             whenIn<State> {
                 onEnter {
-                    state = state.copy(position = 1)
+                    state.update { copy(position = 1) }
                 }
             }
         }
@@ -35,7 +35,7 @@ class DelegateOnEnterTest {
         machine.registerDelegate {
             whenIn<State> {
                 onEnter {
-                    state = state.copy(playing = true)
+                    state.update { copy(playing = true) }
                 }
             }
         }
@@ -43,7 +43,7 @@ class DelegateOnEnterTest {
         machine.registerDelegate {
             whenIn<State> {
                 onEnter {
-                    state = state.copy(saved = true)
+                    state.update { copy(saved = true) }
                 }
             }
         }
@@ -80,7 +80,7 @@ class DelegateOnEnterTest {
         machine.registerDelegate {
             whenIn<State> {
                 onEnter {
-                    state = state.copy(position = 1)
+                    state.update { copy(position = 1) }
                 }
             }
         }
@@ -88,7 +88,7 @@ class DelegateOnEnterTest {
         machine.registerDelegate {
             whenIn<State> {
                 onEnter(main = true) {
-                    state = state.copy(playing = true)
+                    state.update { copy(playing = true) }
                 }
             }
         }
@@ -96,7 +96,7 @@ class DelegateOnEnterTest {
         machine.registerDelegate {
             whenIn<State> {
                 onEnter {
-                    state = state.copy(saved = true)
+                    state.update { copy(saved = true) }
                 }
             }
         }
@@ -133,7 +133,7 @@ class DelegateOnEnterTest {
         machine.registerDelegate {
             whenIn<State> {
                 onEnter {
-                    state = state.copy(position = 1)
+                    state.update { copy(position = 1) }
                 }
             }
         }
@@ -141,7 +141,7 @@ class DelegateOnEnterTest {
         machine.registerDelegate {
             whenIn<State> {
                 onEnter(main = true) {
-                    state = state.copy(playing = true)
+                    state.update { copy(playing = true) }
                 }
             }
         }
@@ -150,7 +150,7 @@ class DelegateOnEnterTest {
             machine.registerDelegate {
                 whenIn<State> {
                     onEnter(main = true) {
-                        state = state.copy(saved = true)
+                        state.update { copy(saved = true) }
                     }
                 }
             }

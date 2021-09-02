@@ -29,19 +29,19 @@ class OnEnterCalledInDefaultDispatcherTest {
             startWith = State.Zero(count = 0)
         ) {
             whenIn<State.Zero> {
-                onEnter { state = state.copy(state.count + 1) }
+                onEnter { state.update { copy(count = count + 1) } }
                 on<Event.One> {
                     transitionTo(State.One(count = state.count))
                 }
             }
             whenIn<State.One> {
-                onEnter { state = state.copy(state.count + 1) }
+                onEnter { state.update { copy(count = count + 1) } }
                 on<Event.Two> {
                     transitionTo(State.Two(count = state.count))
                 }
             }
             whenIn<State.Two> {
-                onEnter { state = state.copy(state.count + 1) }
+                onEnter { state.update { copy(count = count + 1) } }
                 on<Event.Three> {
                     transitionTo(State.Zero(count = state.count))
                 }

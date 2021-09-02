@@ -24,7 +24,7 @@ class ExtrasCanBeSetAndGetInSameStateTest {
                 }
                 on<Unit> {
                     val value = getExtra<String>()
-                    state = state.copy(value = value)
+                    state.update { copy(value = value) }
                 }
             }
         }

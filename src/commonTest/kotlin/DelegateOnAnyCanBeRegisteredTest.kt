@@ -42,7 +42,7 @@ class DelegateOnAnyCanBeRegisteredTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event.Play> {
-                    state = state.copy(playing = true)
+                    state.update { copy(playing = true) }
                 }
             }
         }
@@ -50,7 +50,7 @@ class DelegateOnAnyCanBeRegisteredTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event.Seek> {
-                    state = state.copy(position = state.position + 1)
+                    state.update { copy(position = state.position + 1) }
                 }
             }
         }

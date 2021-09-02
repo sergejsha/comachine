@@ -25,7 +25,7 @@ class ExtrasCanBeRemovedTest {
                 on<Unit> {
                     removeExtra<String?>()
                     val value = getExtra<String?>()
-                    state = state.copy(value = value)
+                    state.update { copy(value = value) }
                 }
             }
         }

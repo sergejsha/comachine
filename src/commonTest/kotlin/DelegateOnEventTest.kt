@@ -29,7 +29,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event> {
-                    state = state.copy(position = 1)
+                    state.update { copy(position = 1) }
                 }
             }
         }
@@ -37,7 +37,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event> {
-                    state = state.copy(playing = true)
+                    state.update { copy(playing = true) }
                 }
             }
         }
@@ -45,7 +45,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event> {
-                    state = state.copy(saved = true)
+                    state.update { copy(saved = true) }
                 }
             }
         }
@@ -83,7 +83,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event>(main = true) {
-                    state = state.copy(position = 1)
+                    state.update { copy(position = 1) }
                 }
             }
         }
@@ -91,7 +91,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event> {
-                    state = state.copy(playing = true)
+                    state.update { copy(playing = true) }
                 }
             }
         }
@@ -99,7 +99,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event> {
-                    state = state.copy(saved = true)
+                    state.update { copy(saved = true) }
                 }
             }
         }
@@ -137,7 +137,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event> {
-                    state = state.copy(position = 1)
+                    state.update { copy(position = 1) }
                 }
             }
         }
@@ -145,7 +145,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event>(main = true) {
-                    state = state.copy(playing = true)
+                    state.update { copy(playing = true) }
                 }
             }
         }
@@ -153,7 +153,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event> {
-                    state = state.copy(saved = true)
+                    state.update { copy(saved = true) }
                 }
             }
         }
@@ -191,7 +191,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event> {
-                    state = state.copy(position = 1)
+                    state.update { copy(position = 1) }
                 }
             }
         }
@@ -199,7 +199,7 @@ class DelegateOnEventTest {
         machine.registerDelegate {
             whenIn<State> {
                 on<Event>(main = true) {
-                    state = state.copy(playing = true)
+                    state.update { copy(playing = true) }
                 }
             }
         }
@@ -208,7 +208,7 @@ class DelegateOnEventTest {
             machine.registerDelegate {
                 whenIn<State> {
                     on<Event>(main = true) {
-                        state = state.copy(saved = true)
+                        state.update { copy(saved = true) }
                     }
                 }
             }
