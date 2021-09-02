@@ -5,7 +5,7 @@
 # Examples
 
 1. [Simple state machine](https://github.com/beworker/comachine/blob/master/src/commonTest/kotlin/AggregateStatesTest.kt)
-2. [Delegation and code decomposition](https://github.com/beworker/comachine/blob/master/src/commonTest/kotlin/OnEventDelegateTest.kt)
+2. [Delegation and code decomposition](https://github.com/beworker/comachine/blob/master/src/commonTest/kotlin/DelegateOnAnyCanBeRegisteredTest.kt)
 
 # Binaries
 ```groovy
