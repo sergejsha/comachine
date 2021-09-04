@@ -33,9 +33,9 @@ class OnSuspendableLatestTest {
                     events.add(event)
                     coroutineScope {
                         if (event.index == 0) {
-                            firstEventJob = launch { delay(1000) }
+                            firstEventJob = launch { delay(2000) }
                         }
-                        withTimeout(1000) {
+                        withTimeout(2000) {
                             allEventsSent.await()
                         }
                         events.add(event)

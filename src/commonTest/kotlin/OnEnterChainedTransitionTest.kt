@@ -31,16 +31,16 @@ class OnEnterChainedTransitionTest {
         val machine = comachine<State, Unit>(
             startWith = State.Zero
         ) {
-            whenIn<State.Zero> { onEnter { transitionTo(State.One) } }
-            whenIn<State.One> { onEnter { transitionTo(State.Two) } }
-            whenIn<State.Two> { onEnter { transitionTo(State.Three) } }
-            whenIn<State.Three> { onEnter { transitionTo(State.Four) } }
-            whenIn<State.Four> { onEnter { transitionTo(State.Five) } }
-            whenIn<State.Five> { onEnter { transitionTo(State.Six) } }
-            whenIn<State.Six> { onEnter { transitionTo(State.Seven) } }
-            whenIn<State.Seven> { onEnter { transitionTo(State.Eight) } }
-            whenIn<State.Eight> { onEnter { transitionTo(State.Nine) } }
-            whenIn<State.Nine> { onEnter { transitionTo(State.Ten) } }
+            whenIn<State.Zero> { onEnter { transitionTo { State.One } } }
+            whenIn<State.One> { onEnter { transitionTo { State.Two } } }
+            whenIn<State.Two> { onEnter { transitionTo { State.Three } } }
+            whenIn<State.Three> { onEnter { transitionTo { State.Four } } }
+            whenIn<State.Four> { onEnter { transitionTo { State.Five } } }
+            whenIn<State.Five> { onEnter { transitionTo { State.Six } } }
+            whenIn<State.Six> { onEnter { transitionTo { State.Seven } } }
+            whenIn<State.Seven> { onEnter { transitionTo { State.Eight } } }
+            whenIn<State.Eight> { onEnter { transitionTo { State.Nine } } }
+            whenIn<State.Nine> { onEnter { transitionTo { State.Ten } } }
             whenIn<State.Ten> { }
         }
 

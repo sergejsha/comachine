@@ -31,19 +31,19 @@ class OnEnterCalledInDefaultDispatcherTest {
             whenIn<State.Zero> {
                 onEnter { state.update { copy(count = count + 1) } }
                 on<Event.One> {
-                    transitionTo(State.One(count = state.count))
+                    transitionTo { State.One(count = state.count) }
                 }
             }
             whenIn<State.One> {
                 onEnter { state.update { copy(count = count + 1) } }
                 on<Event.Two> {
-                    transitionTo(State.Two(count = state.count))
+                    transitionTo { State.Two(count = state.count) }
                 }
             }
             whenIn<State.Two> {
                 onEnter { state.update { copy(count = count + 1) } }
                 on<Event.Three> {
-                    transitionTo(State.Zero(count = state.count))
+                    transitionTo { State.Zero(count = state.count) }
                 }
             }
         }

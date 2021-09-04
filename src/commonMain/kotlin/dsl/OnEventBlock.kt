@@ -10,7 +10,7 @@ class OnEventBlock<State : Any, SubState : State>
 internal constructor(
     @PublishedApi internal val stateHolder: StateHolder<State, SubState>,
     @PublishedApi internal val extras: Lazy<MutableMap<KClass<*>, Any?>>,
-    private val transitionToFct: (State) -> Unit,
+    @PublishedApi internal val transitionToFct: (State) -> Unit,
     private val launchInStateFct: (LaunchBlockReceiver<State, SubState>) -> Job,
     private val launchInMachineFct: (LaunchBlockReceiver<State, SubState>) -> Job,
 ) {
@@ -38,8 +38,8 @@ internal constructor(
         return extras.value.containsKey(T::class)
     }
 
-    fun transitionTo(state: State): Nothing {
-        transitionToFct(state)
+    inline fun transitionTo(block: SubState.() -> State): Nothing {
+        transitionToFct(block(state))
         throw TransitionPerformedException()
     }
 

@@ -28,21 +28,21 @@ class ExtrasAreEmptyInNewStateTest {
                 onEnter {
                     setExtra<String?>("from state one")
                     val value = getExtra<String?>()
-                    transitionTo(State.Two(value = value))
+                    transitionTo { State.Two(value = value) }
                 }
             }
             whenIn<State.Two> {
                 onEnter {
                     val value = getExtra<String?>()
                     setExtra("from state two")
-                    transitionTo(State.Three(value = value))
+                    transitionTo { State.Three(value = value) }
                 }
             }
             whenIn<State.Three> {
                 onEnter {
                     val value = getExtra<String?>()
                     setExtra("form state three")
-                    transitionTo(State.Four(value = value))
+                    transitionTo { State.Four(value = value) }
                 }
             }
             whenIn<State.Four> {

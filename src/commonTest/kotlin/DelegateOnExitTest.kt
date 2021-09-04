@@ -42,7 +42,7 @@ class DelegateOnExitTest {
 
         machine.registerDelegate {
             whenIn<State.One> {
-                onEnter { transitionTo(State.Two) }
+                onEnter { transitionTo { State.Two } }
                 onExit {
                     result += "3"
                 }
@@ -92,7 +92,7 @@ class DelegateOnExitTest {
 
         machine.registerDelegate {
             whenIn<State.One> {
-                onEnter { transitionTo(State.Two) }
+                onEnter { transitionTo { State.Two } }
                 onExit {
                     result += "3"
                 }
@@ -143,7 +143,7 @@ class DelegateOnExitTest {
         try {
             machine.registerDelegate {
                 whenIn<State.One> {
-                    onEnter { transitionTo(State.Two) }
+                    onEnter { transitionTo { State.Two } }
                     onExit(main = true) {
                         result += "3"
                     }

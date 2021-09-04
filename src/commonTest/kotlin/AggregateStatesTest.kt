@@ -30,20 +30,20 @@ class AggregateStatesTest {
         ) {
             whenIn<State.Solid> {
                 on<Event.OnHeat> {
-                    transitionTo(State.Liquid())
+                    transitionTo { State.Liquid() }
                 }
             }
             whenIn<State.Liquid> {
                 on<Event.OnHeat> {
-                    transitionTo(State.Gas())
+                    transitionTo { State.Gas() }
                 }
                 on<Event.OnCold> {
-                    transitionTo(State.Solid())
+                    transitionTo { State.Solid() }
                 }
             }
             whenIn<State.Gas> {
                 on<Event.OnCold> {
-                    transitionTo(State.Liquid())
+                    transitionTo { State.Liquid() }
                 }
             }
         }

@@ -221,4 +221,5 @@ internal interface EventDispatcher<SubEvent : Any> {
     fun onEventCompleted(event: SubEvent) {}
 }
 
+@PublishedApi
 internal class TransitionPerformedException : CancellationException("cancelled on transition")
