@@ -1,3 +1,5 @@
+![maintenance-status](https://img.shields.io/badge/maintenance-experimental-blue.svg)
+
 # Comachine
 
 <img src="https://github.com/beworker/comachine/blob/master/docs/comachine.png" />
